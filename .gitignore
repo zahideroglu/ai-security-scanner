@@ -1,0 +1,55 @@
+# Gradle files
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.vscode/
+.DS_Store
+
+# OS files
+*.swp
+*.swo
+*~
+
+# Compiled class files
+*.class
+
+# JAR files
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Database files
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# Claude files
+.claude/
+
+# API keys and secrets (DO NOT COMMIT)
+config/api_keys.json
+settings/local_settings.json
+# Secrets load at runtime from ~/.appsechunter/secrets.json (outside the repo).
+# Defensive: never commit a secrets file even if one is dropped inside the repo.
+**/secrets.json
+.appsechunter/
+config/
+
+# Claude Code agent skills / lock (tooling, not project code)
+.agents/
+skills-lock.json
+
+# Debug dumps / ad-hoc scripts
+debug_*.txt
+fix_database.sql
+
+# Office temp lock files
+~$*
