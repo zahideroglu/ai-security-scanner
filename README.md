@@ -11,6 +11,8 @@
 
 [Features](#-features) • [Detection](#-how-detection-works) • [Auth Matrix](#-authorization-matrix) • [Scenario BOLA](#-scenario-based-bolaidor) • [Login Profiles](#-login-profiles-fresh-sessions-moved-here-2026-06-25) • [WAF/FW](#-waffw-evasion-min-istek-maks-bulgu) • [Install](#-installation) • [Usage](#-usage) • [Config](#-configuration)
 
+**🇬🇧 English** · [Türkçe](README.tr.md)
+
 </div>
 
 ---
@@ -250,7 +252,7 @@ Tune from **Settings → Detection Engine**: `maxRequestsPerMinute`, `maxRequest
 # IMPORTANT: point JAVA_HOME at a real JDK 8 (not the system JRE)
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_241.jdk/Contents/Home
 ./gradlew clean jar
-# Output: build/libs/appsechunter-2.0.jar
+# Output: build/libs/appsechunter-2.1.jar
 ```
 
 ### Load in Burp

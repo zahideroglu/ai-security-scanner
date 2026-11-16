@@ -20,7 +20,7 @@ import burp.ambient.TargetModel;
  * Advanced Burp Suite Extension for AI-Powered Vulnerability Detection
  *
  * @author Zahid Eroglu
- * @version 1.3.7
+ * @version 2.1
  * @since 2025
  */
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, 
@@ -60,7 +60,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
     // Extension info
     private static final String EXTENSION_NAME = "AppSecHunter";
     private static final String AUTHOR = "Zahid Eroglu";
-    private static final String VERSION = "2.0";
+    private static final String VERSION = "2.1";
     
     /**
      * Extension entry point
