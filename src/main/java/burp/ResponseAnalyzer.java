@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.regex.*;
 
 /**
- * Response Analyzer - Parses and validates Qwen AI responses
+ * Response Analyzer - Parses and validates AI responses
  * 
  * @author Zahid Eroglu
  */

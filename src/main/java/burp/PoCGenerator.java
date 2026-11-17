@@ -12,14 +12,14 @@ import java.io.PrintWriter;
  */
 public class PoCGenerator {
 
-    private static QwenAPIClient aiClient;
+    private static AiApiClient aiClient;
     private static PrintWriter stdout;
     private static PrintWriter stderr;
 
     /**
      * Initialize AI client for smart PoC generation
      */
-    public static void initialize(QwenAPIClient client, PrintWriter out, PrintWriter err) {
+    public static void initialize(AiApiClient client, PrintWriter out, PrintWriter err) {
         aiClient = client;
         stdout = out;
         stderr = err;
@@ -139,8 +139,8 @@ public class PoCGenerator {
                           "Generate practical, working exploit code. Use Markdown formatting with proper code blocks (```python, ```bash, ```http).";
 
             // Call AI with increased token limit for comprehensive output
-            List<QwenAPIClient.Message> messages = new ArrayList<>();
-            messages.add(new QwenAPIClient.Message("user", prompt));
+            List<AiApiClient.Message> messages = new ArrayList<>();
+            messages.add(new AiApiClient.Message("user", prompt));
 
             JSONObject response = aiClient.chatCompletion(messages, 0.3, 4000); // Increased token limit
 

@@ -10,7 +10,7 @@ import java.util.Base64;
 
 /**
  * Gateway LLM client — obtains an access token from Keycloak via the OAuth
- * token-exchange grant, then forwards an (OpenAI/Qwen-style) chat payload to an
+ * token-exchange grant, then forwards an (OpenAI/OpenAI-style) chat payload to an
  * enterprise LLM gateway. Point it at your own gateway + Keycloak in Settings.
  *
  * @author Zahid Eroglu
@@ -60,22 +60,22 @@ public class GatewayTokenClient {
     /**
      * Send chat completion request to the gateway
      */
-    public JSONObject chatCompletion(List<QwenAPIClient.Message> messages) throws Exception {
+    public JSONObject chatCompletion(List<AiApiClient.Message> messages) throws Exception {
         return chatCompletion(messages, 0.7, 2000);
     }
     
-    public JSONObject chatCompletion(List<QwenAPIClient.Message> messages, double temperature, int maxTokens) throws Exception {
+    public JSONObject chatCompletion(List<AiApiClient.Message> messages, double temperature, int maxTokens) throws Exception {
         // Get valid token
         String token = getValidToken();
         
-        // Build inner payload (Qwen format)
+        // Build inner payload (OpenAI-compatible format)
         JSONObject innerPayload = new JSONObject();
         innerPayload.put("model", "Qwen3-235B-FP8");
         innerPayload.put("temperature", temperature);
         innerPayload.put("max_tokens", maxTokens);
         
         JSONArray messagesArray = new JSONArray();
-        for (QwenAPIClient.Message msg : messages) {
+        for (AiApiClient.Message msg : messages) {
             JSONObject msgObj = new JSONObject();
             msgObj.put("role", msg.getRole());
             msgObj.put("content", msg.getContent());
@@ -175,8 +175,8 @@ public class GatewayTokenClient {
     /**
      * Test API connection with detailed result
      */
-    public QwenAPIClient.ConnectionTestResult testConnectionDetailed() {
-        QwenAPIClient.ConnectionTestResult result = new QwenAPIClient.ConnectionTestResult();
+    public AiApiClient.ConnectionTestResult testConnectionDetailed() {
+        AiApiClient.ConnectionTestResult result = new AiApiClient.ConnectionTestResult();
         result.endpoint = apiUrl;
         result.model = "Qwen3-235B-FP8";
 
@@ -388,7 +388,7 @@ public class GatewayTokenClient {
         // VPN-only hosts whose TLS certs are signed by a private CA that is NOT in the
         // JVM truststore -> "PKIX path building failed". Cert verification is therefore
         // skipped for the Gateway provider only, as an explicit opt-in. This client never
-        // talks to any host other than the configured gateway, so the qwen/local secure
+        // talks to any host other than the configured gateway, so the hosted/local secure
         // paths are unaffected.
         if (!(conn instanceof HttpsURLConnection)) {
             return;

@@ -21,7 +21,7 @@ public class SettingsPanel extends JPanel {
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
     private ScanManager scanManager;
-    private QwenAPIClient qwenClient;
+    private AiApiClient aiClient;
     private DatabaseManager dbManager;
     private SettingsManager settingsManager;
     private PrintWriter stdout;
@@ -120,7 +120,7 @@ public class SettingsPanel extends JPanel {
             IBurpExtenderCallbacks callbacks,
             IExtensionHelpers helpers,
             ScanManager scanManager,
-            QwenAPIClient qwenClient,
+            AiApiClient aiClient,
             DatabaseManager dbManager,
             SettingsManager settingsManager,
             PrintWriter stdout,
@@ -129,7 +129,7 @@ public class SettingsPanel extends JPanel {
         this.callbacks = callbacks;
         this.helpers = helpers;
         this.scanManager = scanManager;
-        this.qwenClient = qwenClient;
+        this.aiClient = aiClient;
         this.dbManager = dbManager;
         this.settingsManager = settingsManager;
         this.stdout = stdout;
@@ -1321,7 +1321,7 @@ public class SettingsPanel extends JPanel {
             // Propagate model/endpoint/key changes to the live client instance so every
             // component (ScanManager, AssistantPanel, etc.) picks up the new settings
             // without requiring an extension reload.
-            qwenClient.rebuildFromSettings(currentSettings);
+            aiClient.rebuildFromSettings(currentSettings);
 
             // Apply ambient toggles (start/stop triage + hunter) without a restart.
             if (ambientApplyHook != null) {
@@ -1406,11 +1406,11 @@ public class SettingsPanel extends JPanel {
     }
 
     /** Send a tiny chat completion to verify the model actually GENERATES (not just /models reachable). */
-    private ModelProbeResult probeModel(QwenAPIClient client, String model) {
+    private ModelProbeResult probeModel(AiApiClient client, String model) {
         long t0 = System.currentTimeMillis();
         try {
-            java.util.List<QwenAPIClient.Message> msgs = new java.util.ArrayList<>();
-            msgs.add(new QwenAPIClient.Message("user", "Reply with exactly: OK"));
+            java.util.List<AiApiClient.Message> msgs = new java.util.ArrayList<>();
+            msgs.add(new AiApiClient.Message("user", "Reply with exactly: OK"));
             org.json.JSONObject resp = client.chatCompletion(msgs, 0.0, 8, model, 1);
             long ms = System.currentTimeMillis() - t0;
             if (resp == null || resp.has("error")) {
@@ -1675,14 +1675,14 @@ public class SettingsPanel extends JPanel {
         live.reset();
         new Thread(() -> {
             try {
-                // Temporary client for testing only — never reassign this.qwenClient (would detach the
+                // Temporary client for testing only — never reassign this.aiClient (would detach the
                 // shared instance used by ScanManager/AssistantPanel and break rebuildFromSettings()).
                 String selectedProvider = (String) apiProviderComboBox.getSelectedItem();
                 live.status("settings.live.checking.models");
 
-                QwenAPIClient testClient;
+                AiApiClient testClient;
                 if ("gateway".equals(selectedProvider)) {
-                    testClient = new QwenAPIClient(
+                    testClient = new AiApiClient(
                         "https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/token",
                         "https://your-llm-gateway.example.com/v1",
                         gatewayUsernameField.getText().trim(),
@@ -1695,7 +1695,7 @@ public class SettingsPanel extends JPanel {
                     );
                 } else if ("local".equals(selectedProvider)) {
                     Object localModelSel = localModelComboBox.getSelectedItem();
-                    testClient = new QwenAPIClient(
+                    testClient = new AiApiClient(
                         localApiUrlField.getText().trim(),
                         localApiKeyField.getText().trim(),
                         localModelSel != null ? localModelSel.toString().trim() : "",
@@ -1703,7 +1703,7 @@ public class SettingsPanel extends JPanel {
                         currentSettings != null && currentSettings.isAllowInsecureSsl()
                     );
                 } else {
-                    testClient = new QwenAPIClient(
+                    testClient = new AiApiClient(
                         apiEndpointField.getText().trim(),
                         apiKeyField.getText().trim(),
                         (String) modelComboBox.getSelectedItem(),
@@ -1713,7 +1713,7 @@ public class SettingsPanel extends JPanel {
                 }
 
                 // Step 1: /models reachability.
-                QwenAPIClient.ConnectionTestResult result = testClient.testConnectionDetailed();
+                AiApiClient.ConnectionTestResult result = testClient.testConnectionDetailed();
                 if (!result.success) { live.fail("settings.live.failed", result.message); return; }
 
                 if ("gateway".equals(selectedProvider)) {
@@ -1752,7 +1752,7 @@ public class SettingsPanel extends JPanel {
     /**
      * Show detailed connection error dialog
      */
-    private void showConnectionErrorDialog(QwenAPIClient.ConnectionTestResult result) {
+    private void showConnectionErrorDialog(AiApiClient.ConnectionTestResult result) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
                                      I18n.t("settings.conn.failed.title"), true);
         dialog.setSize(600, 450);
@@ -1852,12 +1852,12 @@ public class SettingsPanel extends JPanel {
         new Thread(() -> {
             try {
                 // Update API client with current endpoint
-                qwenClient.setApiEndpoint(apiEndpointField.getText().trim());
-                qwenClient.setApiKey(apiKeyField.getText().trim());
+                aiClient.setApiEndpoint(apiEndpointField.getText().trim());
+                aiClient.setApiKey(apiKeyField.getText().trim());
 
                 stdout.println("[Settings] Fetching available models from API...");
 
-                org.json.JSONArray modelsArray = qwenClient.getModels();
+                org.json.JSONArray modelsArray = aiClient.getModels();
 
                 SwingUtilities.invokeLater(() -> {
                     if (modelsArray != null && modelsArray.length() > 0) {
@@ -1929,7 +1929,7 @@ public class SettingsPanel extends JPanel {
     private void refreshLocalModels() {
         new Thread(() -> {
             try {
-                QwenAPIClient localClient = new QwenAPIClient(
+                AiApiClient localClient = new AiApiClient(
                     localApiUrlField.getText().trim(),
                     localApiKeyField.getText().trim(),
                     "",

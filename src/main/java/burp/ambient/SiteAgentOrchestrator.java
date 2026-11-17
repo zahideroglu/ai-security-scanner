@@ -7,7 +7,7 @@ import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
 import burp.IRequestInfo;
 import burp.MultiSessionTester;
-import burp.QwenAPIClient;
+import burp.AiApiClient;
 import burp.ScanManager;
 import burp.Settings;
 import burp.engine.AgentPentestEngine;
@@ -44,7 +44,7 @@ public final class SiteAgentOrchestrator {
 
     private final IBurpExtenderCallbacks callbacks;
     private final IExtensionHelpers helpers;
-    private final QwenAPIClient ai;
+    private final AiApiClient ai;
     private final Settings settings;
     private final ScanManager scanManager;
     private final MultiSessionTester sessions; // may be null
@@ -60,7 +60,7 @@ public final class SiteAgentOrchestrator {
 
     /** Standalone run (menu action): shares ScanManager's ONE global throttle + own dedup set. */
     public SiteAgentOrchestrator(IBurpExtenderCallbacks callbacks, IExtensionHelpers helpers,
-                                 QwenAPIClient ai, Settings settings, ScanManager scanManager,
+                                 AiApiClient ai, Settings settings, ScanManager scanManager,
                                  MultiSessionTester sessions, PrintWriter stdout, PrintWriter stderr) {
         this(callbacks, helpers, ai, settings, scanManager, sessions,
                 // Share the ONE global throttle (per-minute FW budget) instead of opening a second
@@ -72,7 +72,7 @@ public final class SiteAgentOrchestrator {
 
     /** Shared run (background hunter / whole-site): caller supplies the limiter + dedup set. */
     public SiteAgentOrchestrator(IBurpExtenderCallbacks callbacks, IExtensionHelpers helpers,
-                                 QwenAPIClient ai, Settings settings, ScanManager scanManager,
+                                 AiApiClient ai, Settings settings, ScanManager scanManager,
                                  MultiSessionTester sessions, SharedRateLimiter limiter,
                                  Set<String> reportedKeys, PrintWriter stdout, PrintWriter stderr) {
         this.callbacks = callbacks;
@@ -171,10 +171,10 @@ public final class SiteAgentOrchestrator {
             }
             sb.append("Return ONLY a JSON array of the 1-3 most relevant ids, e.g. [\"access-control-idor\"].");
 
-            List<QwenAPIClient.Message> messages = new ArrayList<QwenAPIClient.Message>();
-            messages.add(new QwenAPIClient.Message("system",
+            List<AiApiClient.Message> messages = new ArrayList<AiApiClient.Message>();
+            messages.add(new AiApiClient.Message("system",
                     "You are a precise security triage assistant. Respond with a JSON array of ids only."));
-            messages.add(new QwenAPIClient.Message("user", sb.toString()));
+            messages.add(new AiApiClient.Message("user", sb.toString()));
 
             JSONObject resp = ai.chatCompletion(messages, 0.2, settings.getEngineMaxTokens(),
                     settings.getAgentModel(), 1);

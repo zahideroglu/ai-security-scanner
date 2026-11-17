@@ -40,7 +40,7 @@ public class ColorScheme {
 
     // Chat Message Colors
     public static Color CHAT_USER_BG;
-    public static Color CHAT_QWEN_BG;
+    public static Color CHAT_AI_BG;
     public static Color CHAT_SYSTEM_BG;
     public static Color CHAT_VULN_BG;
 
@@ -139,7 +139,7 @@ public class ColorScheme {
 
         // Chat Message Colors (Dark Theme)
         CHAT_USER_BG = new Color(33, 150, 243, 30);
-        CHAT_QWEN_BG = new Color(76, 175, 80, 30);
+        CHAT_AI_BG = new Color(76, 175, 80, 30);
         CHAT_SYSTEM_BG = new Color(120, 120, 120, 30);
         CHAT_VULN_BG = new Color(244, 67, 54, 30);
 
@@ -186,7 +186,7 @@ public class ColorScheme {
 
         // Chat Message Colors (Light Theme)
         CHAT_USER_BG = new Color(33, 150, 243, 40);
-        CHAT_QWEN_BG = new Color(76, 175, 80, 40);
+        CHAT_AI_BG = new Color(76, 175, 80, 40);
         CHAT_SYSTEM_BG = new Color(158, 158, 158, 40);
         CHAT_VULN_BG = new Color(244, 67, 54, 40);
 
@@ -263,8 +263,8 @@ public class ColorScheme {
             case "user":
                 return CHAT_USER_BG;
             case "assistant":
-            case "qwen":
-                return CHAT_QWEN_BG;
+            case "ai":
+                return CHAT_AI_BG;
             case "vuln":
                 return CHAT_VULN_BG;
             default:

@@ -69,7 +69,7 @@ public class CustomScanIssue implements IScanIssue {
     
     @Override
     public String getIssueBackground() {
-        return "<p>This vulnerability was detected by AI Security Scanner using Qwen AI model.</p>" +
+        return "<p>This vulnerability was detected by AI Security Scanner using AI model.</p>" +
                "<p>The scanner uses advanced AI to analyze HTTP traffic and identify security vulnerabilities.</p>";
     }
     

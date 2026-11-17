@@ -4,7 +4,7 @@ import burp.i18n.I18n;
 import java.util.*;
 
 /**
- * Prompt Builder - Constructs optimized prompts for Qwen AI
+ * Prompt Builder - Constructs optimized prompts for AI
  * 
  * @author Zahid Eroglu
  */
@@ -406,23 +406,23 @@ public class PromptBuilder {
     /**
      * Build conversation prompt with context
      */
-    public static List<QwenAPIClient.Message> buildConversationPrompt(
+    public static List<AiApiClient.Message> buildConversationPrompt(
             List<Conversation> history,
             String userPrompt,
             String httpRequest,
             String httpResponse) {
         
-        List<QwenAPIClient.Message> messages = new ArrayList<>();
+        List<AiApiClient.Message> messages = new ArrayList<>();
         
         // System prompt
-        messages.add(new QwenAPIClient.Message("system", systemPrompt()));
+        messages.add(new AiApiClient.Message("system", systemPrompt()));
         
         // Add conversation history (last 5 messages)
         int startIdx = Math.max(0, history.size() - 5);
         for (int i = startIdx; i < history.size(); i++) {
             Conversation conv = history.get(i);
             String role = conv.getSender().equals("user") ? "user" : "assistant";
-            messages.add(new QwenAPIClient.Message(role, conv.getMessage()));
+            messages.add(new AiApiClient.Message(role, conv.getMessage()));
         }
         
         // Add current request with prompt
@@ -431,7 +431,7 @@ public class PromptBuilder {
                            "\n\nHTTP Response:\n" + 
                            truncate(httpResponse, 3000);
         
-        messages.add(new QwenAPIClient.Message("user", userMessage));
+        messages.add(new AiApiClient.Message("user", userMessage));
         
         return messages;
     }
@@ -439,14 +439,14 @@ public class PromptBuilder {
     /**
      * Build prompt from template
      */
-    public static List<QwenAPIClient.Message> buildTemplatePrompt(
+    public static List<AiApiClient.Message> buildTemplatePrompt(
             Template template,
             String httpRequest,
             String httpResponse) {
         
-        List<QwenAPIClient.Message> messages = new ArrayList<>();
+        List<AiApiClient.Message> messages = new ArrayList<>();
 
-        messages.add(new QwenAPIClient.Message("system", systemPrompt()));
+        messages.add(new AiApiClient.Message("system", systemPrompt()));
 
         String userMessage = template.getDescription() +
                            "\n\nHTTP Request:\n" + 
@@ -454,7 +454,7 @@ public class PromptBuilder {
                            "\n\nHTTP Response:\n" + 
                            truncate(httpResponse, 3000);
         
-        messages.add(new QwenAPIClient.Message("user", userMessage));
+        messages.add(new AiApiClient.Message("user", userMessage));
         
         return messages;
     }
@@ -462,7 +462,7 @@ public class PromptBuilder {
     /**
      * Build simple scan prompt
      */
-    public static List<QwenAPIClient.Message> buildSimplePrompt(
+    public static List<AiApiClient.Message> buildSimplePrompt(
             String httpRequest,
             String httpResponse) {
         

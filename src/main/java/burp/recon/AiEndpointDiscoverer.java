@@ -5,7 +5,7 @@ import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IRequestInfo;
-import burp.QwenAPIClient;
+import burp.AiApiClient;
 import burp.engine.DetectionStage;
 import burp.engine.SharedRateLimiter;
 import burp.engine.StageListener;
@@ -42,15 +42,15 @@ public class AiEndpointDiscoverer {
 
     private final IBurpExtenderCallbacks callbacks;
     private final IExtensionHelpers helpers;
-    private final QwenAPIClient qwen;
+    private final AiApiClient aiClient;
     private final PrintWriter stdout, stderr;
     private final List<String> minedParams = new ArrayList<>(); // AI-proposed hidden parameters (for the test engine)
 
     public AiEndpointDiscoverer(IBurpExtenderCallbacks callbacks, IExtensionHelpers helpers,
-                                QwenAPIClient qwen, PrintWriter stdout, PrintWriter stderr) {
+                                AiApiClient aiClient, PrintWriter stdout, PrintWriter stderr) {
         this.callbacks = callbacks;
         this.helpers = helpers;
-        this.qwen = qwen;
+        this.aiClient = aiClient;
         this.stdout = stdout;
         this.stderr = stderr;
     }
@@ -175,7 +175,7 @@ public class AiEndpointDiscoverer {
 
     private List<String> aiProposePaths(String host, Set<String> observed) {
         List<String> out = new ArrayList<>();
-        if (qwen == null) return out;
+        if (aiClient == null) return out;
         try {
             StringBuilder sample = new StringBuilder();
             int n = 0;
@@ -187,11 +187,11 @@ public class AiEndpointDiscoverer {
                     + "(create/update/delete/export), versioned /api paths, and likely sensitive operations. Use concrete "
                     + "paths starting with '/'. Also list likely hidden request parameters for the main resource.\n"
                     + "Respond ONLY JSON: {\"endpoints\":[\"/...\"],\"parameters\":[\"...\"]}";
-            List<QwenAPIClient.Message> msgs = new ArrayList<>();
-            msgs.add(new QwenAPIClient.Message("system",
+            List<AiApiClient.Message> msgs = new ArrayList<>();
+            msgs.add(new AiApiClient.Message("system",
                     "You are a web application reconnaissance expert. Respond only with valid JSON."));
-            msgs.add(new QwenAPIClient.Message("user", prompt));
-            JSONObject resp = qwen.chatCompletion(msgs);
+            msgs.add(new AiApiClient.Message("user", prompt));
+            JSONObject resp = aiClient.chatCompletion(msgs);
             String content = resp.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
             int s = content.indexOf("{"), e = content.lastIndexOf("}") + 1;
             if (s >= 0 && e > s) {

@@ -16,7 +16,7 @@ import java.util.*;
  */
 public class AIContextAnalyzer {
 
-    private QwenAPIClient aiClient;
+    private AiApiClient aiClient;
     private IExtensionHelpers helpers;
     private PrintWriter stdout;
     private PrintWriter stderr;
@@ -24,7 +24,7 @@ public class AIContextAnalyzer {
     // Cache for analyzed hosts
     private Map<String, ContextInfo> contextCache;
 
-    public AIContextAnalyzer(QwenAPIClient aiClient,
+    public AIContextAnalyzer(AiApiClient aiClient,
                             IExtensionHelpers helpers,
                             PrintWriter stdout,
                             PrintWriter stderr) {
@@ -56,9 +56,9 @@ public class AIContextAnalyzer {
             String prompt = buildContextAnalysisPrompt(message);
 
             // Send to AI
-            List<QwenAPIClient.Message> messages = new ArrayList<>();
-            messages.add(new QwenAPIClient.Message("system", getSystemPrompt()));
-            messages.add(new QwenAPIClient.Message("user", prompt));
+            List<AiApiClient.Message> messages = new ArrayList<>();
+            messages.add(new AiApiClient.Message("system", getSystemPrompt()));
+            messages.add(new AiApiClient.Message("user", prompt));
 
             JSONObject aiResponse = aiClient.chatCompletion(messages);
 

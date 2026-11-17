@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 class WorkflowAnalyzerTest {
 
     @Mock
-    private QwenAPIClient aiClient;
+    private AiApiClient aiClient;
     @Mock
     private IExtensionHelpers helpers;
     @Mock

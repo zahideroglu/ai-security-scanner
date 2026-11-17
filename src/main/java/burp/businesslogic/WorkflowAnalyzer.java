@@ -13,12 +13,12 @@ import java.util.*;
  */
 public class WorkflowAnalyzer {
 
-    private QwenAPIClient aiClient;
+    private AiApiClient aiClient;
     private IExtensionHelpers helpers;
     private PrintWriter stdout;
     private PrintWriter stderr;
 
-    public WorkflowAnalyzer(QwenAPIClient aiClient,
+    public WorkflowAnalyzer(AiApiClient aiClient,
             IExtensionHelpers helpers,
             PrintWriter stdout,
             PrintWriter stderr) {
@@ -71,14 +71,14 @@ public class WorkflowAnalyzer {
             prompt.append("  }\n");
             prompt.append("]\n");
 
-            List<QwenAPIClient.Message> messages = new ArrayList<>();
-            messages.add(new QwenAPIClient.Message("system",
+            List<AiApiClient.Message> messages = new ArrayList<>();
+            messages.add(new AiApiClient.Message("system",
                     "You are an expert security researcher. Output only valid JSON."
                     + (burp.i18n.I18n.isTr()
                         ? " Write any human-readable \"description\", \"attackScenario\"/scenario and \"remediation\" "
                           + "field VALUES in TURKISH; keep all JSON keys, the chain \"name\" and \"severity\" enum in English."
                         : "")));
-            messages.add(new QwenAPIClient.Message("user", prompt.toString()));
+            messages.add(new AiApiClient.Message("user", prompt.toString()));
 
             JSONObject aiResponse = aiClient.chatCompletion(messages);
 

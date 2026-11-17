@@ -45,7 +45,7 @@ public class FindingsPanel extends JPanel {
     private Finding selectedFinding;
     private IHttpRequestResponse selectedRequestResponse;
     private JLabel countLabel; // Direct reference for performance
-    private QwenAPIClient qwenClient; // for AI-written report narrative (optional)
+    private AiApiClient aiClient; // for AI-written report narrative (optional)
 
     public FindingsPanel(IBurpExtenderCallbacks callbacks, IExtensionHelpers helpers, DatabaseManager dbManager) {
         this.callbacks = callbacks;
@@ -100,7 +100,7 @@ public class FindingsPanel extends JPanel {
     /**
      * Create the findings table panel
      */
-    public void setQwenClient(QwenAPIClient q) { this.qwenClient = q; }
+    public void setAiClient(AiApiClient q) { this.aiClient = q; }
 
     /** Export the current findings as a professional .docx report (AI summary + structured sections). */
     private void exportProReport() {
@@ -120,7 +120,7 @@ public class FindingsPanel extends JPanel {
         JOptionPane.showMessageDialog(this, I18n.t("findings.report.generating"));
         new Thread(() -> {
             try {
-                new burp.report.ProReportGenerator(qwenClient).generate(snapshot, out);
+                new burp.report.ProReportGenerator(aiClient).generate(snapshot, out);
                 SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
                         I18n.t("findings.report.saved") + "\n" + out.getAbsolutePath()));
             } catch (Exception ex) {

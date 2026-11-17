@@ -1,7 +1,7 @@
 package burp.report;
 
 import burp.Finding;
-import burp.QwenAPIClient;
+import burp.AiApiClient;
 
 import org.json.JSONObject;
 
@@ -26,10 +26,10 @@ import java.util.Set;
 public class ProReportGenerator {
 
     private static final int AI_IMPACT_CAP = 40; // bound per-finding AI calls
-    private final QwenAPIClient qwen;
+    private final AiApiClient aiClient;
 
-    public ProReportGenerator(QwenAPIClient qwen) {
-        this.qwen = qwen;
+    public ProReportGenerator(AiApiClient aiClient) {
+        this.aiClient = aiClient;
     }
 
     public void generate(List<Finding> all, File out) throws Exception {
@@ -137,7 +137,7 @@ public class ProReportGenerator {
                 + (fpCount > 0 ? " (" + fpCount + " olası false-positive AI ile elendi)" : "") + ". "
                 + "Önem dağılımı: " + severityCounts(list) + ". Öncelikli olarak yüksek önem dereceli erişim-kontrol ve "
                 + "bilgi-ifşası bulguları giderilmelidir.";
-        if (qwen == null) return templated;
+        if (aiClient == null) return templated;
         try {
             StringBuilder s = new StringBuilder();
             s.append("Hedef: ").append(target).append("\nDoğrulanmış bulgu: ").append(list.size())
@@ -150,12 +150,12 @@ public class ProReportGenerator {
                     if (++n >= 25) break;
                 }
             }
-            List<QwenAPIClient.Message> m = new ArrayList<>();
-            m.add(new QwenAPIClient.Message("system", "Sen kıdemli bir sızma testi uzmanısın. Profesyonel, net Türkçe "
+            List<AiApiClient.Message> m = new ArrayList<>();
+            m.add(new AiApiClient.Message("system", "Sen kıdemli bir sızma testi uzmanısın. Profesyonel, net Türkçe "
                     + "yaz. Sadece düz metin, 2-3 paragraf yönetici özeti (madde işareti yok)."));
-            m.add(new QwenAPIClient.Message("user", "Aşağıdaki bulgulara dayanarak bir YÖNETİCİ ÖZETİ yaz: genel risk "
+            m.add(new AiApiClient.Message("user", "Aşağıdaki bulgulara dayanarak bir YÖNETİCİ ÖZETİ yaz: genel risk "
                     + "durumu, en kritik temalar, iş etkisi ve öncelikli aksiyon önerisi. Akıcı paragraflar.\n\n" + s));
-            JSONObject r = qwen.chatCompletion(m);
+            JSONObject r = aiClient.chatCompletion(m);
             String c = r.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content").trim();
             return c.isEmpty() ? templated : c;
         } catch (Exception e) {
@@ -164,16 +164,16 @@ public class ProReportGenerator {
     }
 
     private String aiBusinessImpact(Finding f) {
-        if (qwen == null) return "";
+        if (aiClient == null) return "";
         String sev = norm(f.getEffectiveSeverity()).toLowerCase();
         if (!(sev.equals("critical") || sev.equals("high") || sev.equals("medium"))) return "";
         try {
-            List<QwenAPIClient.Message> m = new ArrayList<>();
-            m.add(new QwenAPIClient.Message("system", "Kıdemli sızma testi uzmanı. 1-2 cümle, Türkçe, iş etkisine odaklan."));
-            m.add(new QwenAPIClient.Message("user", "Bu bulgunun İŞ ETKİSİNİ 1-2 cümlede yaz:\nTip: " + f.getType()
+            List<AiApiClient.Message> m = new ArrayList<>();
+            m.add(new AiApiClient.Message("system", "Kıdemli sızma testi uzmanı. 1-2 cümle, Türkçe, iş etkisine odaklan."));
+            m.add(new AiApiClient.Message("user", "Bu bulgunun İŞ ETKİSİNİ 1-2 cümlede yaz:\nTip: " + f.getType()
                     + "\nÖnem: " + f.getEffectiveSeverity() + "\nAçıklama: " + trunc(f.getDescription(), 400)
                     + "\nKanıt: " + trunc(f.getEvidence(), 200)));
-            JSONObject r = qwen.chatCompletion(m);
+            JSONObject r = aiClient.chatCompletion(m);
             return r.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content").trim();
         } catch (Exception e) {
             return "";

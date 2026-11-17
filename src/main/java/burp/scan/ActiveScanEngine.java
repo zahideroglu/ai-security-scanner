@@ -36,7 +36,7 @@ public class ActiveScanEngine {
 
     private final IBurpExtenderCallbacks callbacks;
     private final IExtensionHelpers helpers;
-    private final QwenAPIClient qwenClient;
+    private final AiApiClient aiClient;
     private final Settings settings;
     private final PrintWriter stdout;
     private final PrintWriter stderr;
@@ -45,9 +45,9 @@ public class ActiveScanEngine {
     private final List<ScanModule> modules;
 
     public ActiveScanEngine(IBurpExtenderCallbacks callbacks, IExtensionHelpers helpers,
-                            QwenAPIClient qwenClient, Settings settings,
+                            AiApiClient aiClient, Settings settings,
                             PrintWriter stdout, PrintWriter stderr, burp.engine.SharedRateLimiter rateLimiter) {
-        this(callbacks, helpers, qwenClient, settings, stdout, stderr, rateLimiter, false);
+        this(callbacks, helpers, aiClient, settings, stdout, stderr, rateLimiter, false);
     }
 
     /**
@@ -56,12 +56,12 @@ public class ActiveScanEngine {
      * scan (those run only on the site root to avoid repeating them per endpoint).
      */
     public ActiveScanEngine(IBurpExtenderCallbacks callbacks, IExtensionHelpers helpers,
-                            QwenAPIClient qwenClient, Settings settings,
+                            AiApiClient aiClient, Settings settings,
                             PrintWriter stdout, PrintWriter stderr,
                             burp.engine.SharedRateLimiter rateLimiter, boolean singleRequest) {
         this.callbacks = callbacks;
         this.helpers = helpers;
-        this.qwenClient = qwenClient;
+        this.aiClient = aiClient;
         this.settings = settings;
         this.stdout = stdout;
         this.stderr = stderr;
@@ -98,7 +98,7 @@ public class ActiveScanEngine {
                             + b.parameters.size() + " param");
         }
 
-        AITestingAgent mutator = new AITestingAgent(callbacks, helpers, qwenClient, stdout, stderr);
+        AITestingAgent mutator = new AITestingAgent(callbacks, helpers, aiClient, stdout, stderr);
         TestSink sink = new TestSink(callbacks, helpers, mutator, listener,
                 settings.getActiveScanParallelism(), settings.getMaxRequestsPerSecond(), rateLimiter, stderr);
 

@@ -9,7 +9,7 @@ import burp.IParameter;
 import burp.IRequestInfo;
 import burp.MultiSessionTester;
 import burp.MultiSessionTester.UserSession;
-import burp.QwenAPIClient;
+import burp.AiApiClient;
 import burp.ai.AIFalsePositiveFilter;
 import burp.scan.EndpointKey;
 import burp.scan.JsonIds;
@@ -61,18 +61,18 @@ public class ChainBolaTester {
     private final IBurpExtenderCallbacks callbacks;
     private final IExtensionHelpers helpers;
     private final MultiSessionTester mtester;
-    private final QwenAPIClient qwen;
+    private final AiApiClient aiClient;
     private final SharedRateLimiter limiter;
     private final PrintWriter stdout, stderr;
     private final AccessOracle oracle;
 
     public ChainBolaTester(IBurpExtenderCallbacks callbacks, IExtensionHelpers helpers,
-                           MultiSessionTester mtester, QwenAPIClient qwen, SharedRateLimiter limiter,
+                           MultiSessionTester mtester, AiApiClient aiClient, SharedRateLimiter limiter,
                            PrintWriter stdout, PrintWriter stderr) {
         this.callbacks = callbacks;
         this.helpers = helpers;
         this.mtester = mtester;
-        this.qwen = qwen;
+        this.aiClient = aiClient;
         this.limiter = limiter;
         this.stdout = stdout;
         this.stderr = stderr;
@@ -115,8 +115,8 @@ public class ChainBolaTester {
         Set<String> names = new LinkedHashSet<>();
         for (Inject c : consumers) names.add(c.name);
 
-        AIFalsePositiveFilter ai = (qwen != null)
-                ? new AIFalsePositiveFilter(qwen, helpers, stdout, stderr) : null;
+        AIFalsePositiveFilter ai = (aiClient != null)
+                ? new AIFalsePositiveFilter(aiClient, helpers, stdout, stderr) : null;
         List<UserSession> attackers = attackerSessions.size() > MAX_ATTACKERS
                 ? attackerSessions.subList(0, MAX_ATTACKERS) : attackerSessions;
 

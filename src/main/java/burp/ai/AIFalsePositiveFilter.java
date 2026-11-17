@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  */
 public class AIFalsePositiveFilter {
 
-    private QwenAPIClient aiClient;
+    private AiApiClient aiClient;
     private IExtensionHelpers helpers;
     private PrintWriter stdout;
     private PrintWriter stderr;
@@ -39,7 +39,7 @@ public class AIFalsePositiveFilter {
         }
     }
 
-    public AIFalsePositiveFilter(QwenAPIClient aiClient,
+    public AIFalsePositiveFilter(AiApiClient aiClient,
                                 IExtensionHelpers helpers,
                                 PrintWriter stdout,
                                 PrintWriter stderr) {
@@ -72,9 +72,9 @@ public class AIFalsePositiveFilter {
                                                    testRequest, context, localKbContext);
 
             // Send to AI
-            List<QwenAPIClient.Message> messages = new ArrayList<>();
-            messages.add(new QwenAPIClient.Message("system", getSystemPrompt()));
-            messages.add(new QwenAPIClient.Message("user", prompt));
+            List<AiApiClient.Message> messages = new ArrayList<>();
+            messages.add(new AiApiClient.Message("system", getSystemPrompt()));
+            messages.add(new AiApiClient.Message("user", prompt));
 
             JSONObject aiResponse = aiClient.chatCompletion(messages);
 
@@ -152,9 +152,9 @@ public class AIFalsePositiveFilter {
                                                  ContextInfo context, String localKbContext, String lens) {
         try {
             String prompt = buildVerificationPrompt(finding, baseRequest, baseRequest, context, localKbContext);
-            List<QwenAPIClient.Message> messages = new ArrayList<>();
-            messages.add(new QwenAPIClient.Message("system", getSystemPrompt() + "\n\nVERIFIER LENS: " + lens));
-            messages.add(new QwenAPIClient.Message("user", prompt));
+            List<AiApiClient.Message> messages = new ArrayList<>();
+            messages.add(new AiApiClient.Message("system", getSystemPrompt() + "\n\nVERIFIER LENS: " + lens));
+            messages.add(new AiApiClient.Message("user", prompt));
             return parseAIResponse(aiClient.chatCompletion(messages));
         } catch (Exception e) {
             ValidationResult r = new ValidationResult();
@@ -181,9 +181,9 @@ public class AIFalsePositiveFilter {
                                                String negativeControlBody, ContextInfo context) {
         try {
             stdout.println("[*] AI access-control (BOLA/IDOR) judgment: " + findingType);
-            List<QwenAPIClient.Message> messages = new ArrayList<>();
-            messages.add(new QwenAPIClient.Message("system", getAccessSystemPrompt()));
-            messages.add(new QwenAPIClient.Message("user",
+            List<AiApiClient.Message> messages = new ArrayList<>();
+            messages.add(new AiApiClient.Message("system", getAccessSystemPrompt()));
+            messages.add(new AiApiClient.Message("user",
                     buildAccessControlPrompt(findingType, manipulation, baselineBody, manipulatedBody,
                             negativeControlBody, context)));
             JSONObject aiResponse = aiClient.chatCompletion(messages);

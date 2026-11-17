@@ -35,7 +35,7 @@ import java.util.List;
 public class AssistantPanel extends JPanel {
 
     private final IBurpExtenderCallbacks callbacks;
-    private final QwenAPIClient qwenClient;
+    private final AiApiClient aiClient;
     private final ScanManager scanManager;
     private final DatabaseManager databaseManager;
     private final TargetModel targetModel;
@@ -45,7 +45,7 @@ public class AssistantPanel extends JPanel {
     private final PrintWriter stdout;
     private final PrintWriter stderr;
 
-    private final List<QwenAPIClient.Message> history = new ArrayList<QwenAPIClient.Message>();
+    private final List<AiApiClient.Message> history = new ArrayList<AiApiClient.Message>();
 
     // Opportunities table
     private JTable oppTable;
@@ -118,13 +118,13 @@ public class AssistantPanel extends JPanel {
             "provided in context, give concrete, endpoint-specific testing advice. Be practical and concise. " +
             "Answer in the user's language.";
 
-    public AssistantPanel(IBurpExtenderCallbacks callbacks, QwenAPIClient qwenClient,
+    public AssistantPanel(IBurpExtenderCallbacks callbacks, AiApiClient aiClient,
                           ScanManager scanManager, DatabaseManager databaseManager,
                           TargetModel targetModel, OpportunityQueue queue,
                           DetectionPanel detectionPanel, SettingsManager settingsManager,
                           PrintWriter stdout, PrintWriter stderr) {
         this.callbacks = callbacks;
-        this.qwenClient = qwenClient;
+        this.aiClient = aiClient;
         this.scanManager = scanManager;
         this.databaseManager = databaseManager;
         this.targetModel = targetModel;
@@ -142,7 +142,7 @@ public class AssistantPanel extends JPanel {
 
     private void resetHistory() {
         history.clear();
-        history.add(new QwenAPIClient.Message("system", SYSTEM_PROMPT));
+        history.add(new AiApiClient.Message("system", SYSTEM_PROMPT));
     }
 
     private void initializeUI() {
@@ -531,7 +531,7 @@ public class AssistantPanel extends JPanel {
         if (text.isEmpty()) return;
         input.setText("");
         appendStyled(I18n.t("copilot.role.you"), roleYouColor(), text);
-        history.add(new QwenAPIClient.Message("user", text));
+        history.add(new AiApiClient.Message("user", text));
 
         final Opportunity selected = selectedOpportunity(); // capture on EDT
         setBusy(true);
@@ -540,16 +540,16 @@ public class AssistantPanel extends JPanel {
             String reply;
             boolean ok = true;
             try {
-                java.util.List<QwenAPIClient.Message> apiMessages =
-                        new ArrayList<QwenAPIClient.Message>(history);
+                java.util.List<AiApiClient.Message> apiMessages =
+                        new ArrayList<AiApiClient.Message>(history);
                 String ctx = buildCopilotContext(selected);
                 if (!ctx.isEmpty()) {
-                    apiMessages.add(1, new QwenAPIClient.Message("system", ctx)); // after system prompt
+                    apiMessages.add(1, new AiApiClient.Message("system", ctx)); // after system prompt
                 }
-                org.json.JSONObject resp = qwenClient.chatCompletion(apiMessages);
+                org.json.JSONObject resp = aiClient.chatCompletion(apiMessages);
                 reply = resp.getJSONArray("choices").getJSONObject(0)
                         .getJSONObject("message").getString("content");
-                history.add(new QwenAPIClient.Message("assistant", reply));
+                history.add(new AiApiClient.Message("assistant", reply));
             } catch (Exception e) {
                 ok = false;
                 stderr.println("[Copilot] error: " + e.getMessage());
@@ -777,10 +777,10 @@ public class AssistantPanel extends JPanel {
             String reply;
             boolean ok = true;
             try {
-                java.util.List<QwenAPIClient.Message> msgs = new ArrayList<QwenAPIClient.Message>();
-                msgs.add(new QwenAPIClient.Message("system", IDOR_EXPLAIN_SYSTEM));
-                msgs.add(new QwenAPIClient.Message("user", buildIdorExplainPrompt(fin, fmsg, cand)));
-                org.json.JSONObject resp = qwenClient.chatCompletion(msgs);
+                java.util.List<AiApiClient.Message> msgs = new ArrayList<AiApiClient.Message>();
+                msgs.add(new AiApiClient.Message("system", IDOR_EXPLAIN_SYSTEM));
+                msgs.add(new AiApiClient.Message("user", buildIdorExplainPrompt(fin, fmsg, cand)));
+                org.json.JSONObject resp = aiClient.chatCompletion(msgs);
                 reply = resp.getJSONArray("choices").getJSONObject(0)
                         .getJSONObject("message").getString("content");
             } catch (Exception e) {

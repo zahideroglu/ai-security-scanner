@@ -8,7 +8,7 @@ import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
 import burp.MultiSessionTester;
-import burp.QwenAPIClient;
+import burp.AiApiClient;
 import burp.ScanManager;
 import burp.Settings;
 import burp.engine.SharedRateLimiter;
@@ -47,7 +47,7 @@ public final class BackgroundHunter {
 
     private final IBurpExtenderCallbacks callbacks;
     private final IExtensionHelpers helpers;
-    private final QwenAPIClient ai;
+    private final AiApiClient ai;
     private final Settings settings;
     private final ScanManager scanManager;
     private final MultiSessionTester sessions;
@@ -77,7 +77,7 @@ public final class BackgroundHunter {
     private volatile long aiBackoffUntilMs = 0L;              // scheduler pauses dispatch until this time
     private final AtomicInteger consecAiOutages = new AtomicInteger();
 
-    public BackgroundHunter(IBurpExtenderCallbacks callbacks, IExtensionHelpers helpers, QwenAPIClient ai,
+    public BackgroundHunter(IBurpExtenderCallbacks callbacks, IExtensionHelpers helpers, AiApiClient ai,
                             Settings settings, ScanManager scanManager, MultiSessionTester sessions,
                             OpportunityQueue queue, TargetModel model, SharedRateLimiter limiter,
                             DetectionPanel detectionPanel, PrintWriter stdout, PrintWriter stderr) {

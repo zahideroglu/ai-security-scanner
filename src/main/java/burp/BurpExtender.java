@@ -41,7 +41,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
     private SettingsPanel settingsPanel;
 
     // Managers
-    private QwenAPIClient qwenClient;
+    private AiApiClient aiClient;
     private DatabaseManager databaseManager;
     private ScanManager scanManager;
     private SettingsManager settingsManager;
@@ -111,7 +111,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
 
             // Background hunter (needs the detection panel built in createUI for its live view)
             Settings liveSettings = settingsManager.getSettings();
-            backgroundHunter = new BackgroundHunter(callbacks, helpers, qwenClient, liveSettings, scanManager,
+            backgroundHunter = new BackgroundHunter(callbacks, helpers, aiClient, liveSettings, scanManager,
                     multiSessionTester, opportunityQueue, targetModel, scanManager.getGlobalRateLimiter(),
                     detectionPanel, stdout, stderr);
             if (assistantPanel != null) {
@@ -172,8 +172,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
         databaseManager = new DatabaseManager();
         databaseManager.initialize();
         
-        // Initialize Qwen API client
-        qwenClient = QwenAPIClient.createClient(settings);
+        // Initialize AI API client
+        aiClient = AiApiClient.createClient(settings);
         
         // Initialize filter engine
         filterEngine = new FilterEngine(callbacks, settings);
@@ -182,7 +182,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
         scanManager = new ScanManager(
             callbacks,
             helpers,
-            qwenClient,
+            aiClient,
             databaseManager,
             filterEngine,
             settings,
@@ -191,10 +191,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
         );
 
         // Initialize AI-powered PoC Generator
-        PoCGenerator.initialize(qwenClient, stdout, stderr);
+        PoCGenerator.initialize(aiClient, stdout, stderr);
         stdout.println("[✓] AI-powered PoC Generator initialized");
 
-        multiSessionTester = new MultiSessionTester(callbacks, helpers, qwenClient, stdout, stderr);
+        multiSessionTester = new MultiSessionTester(callbacks, helpers, aiClient, stdout, stderr);
         scanManager.setMultiSessionTester(multiSessionTester); // agentic pentester reuses saved identities
         // Faz 2: encrypted login-profile store + session freshness / auto-relogin keeper.
         credentialStore = new burp.session.CredentialStore(callbacks, stderr);
@@ -262,7 +262,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
         // Findings tab - single global view of ALL findings (engine, scans, multi-session)
         try {
             globalFindingsPanel = new FindingsPanel(callbacks, helpers, databaseManager);
-            globalFindingsPanel.setQwenClient(qwenClient);
+            globalFindingsPanel.setAiClient(aiClient);
             scanManager.setFindingsPanel(globalFindingsPanel);
             mainTabbedPane.addTab(I18n.t("tab.findings"), globalFindingsPanel);
         } catch (Throwable t) {
@@ -283,7 +283,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
 
         // Copilot tab - ambient security copilot (opportunities feed + context-aware chat)
         try {
-            assistantPanel = new AssistantPanel(callbacks, qwenClient, scanManager, databaseManager,
+            assistantPanel = new AssistantPanel(callbacks, aiClient, scanManager, databaseManager,
                     targetModel, opportunityQueue, detectionPanel, settingsManager, stdout, stderr);
             mainTabbedPane.addTab(I18n.t("tab.copilot"), assistantPanel);
             // Feed every confirmed (non-suppressed) finding to the Copilot so it can announce IDOR/BOLA.
@@ -303,7 +303,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
                 callbacks,
                 helpers,
                 scanManager,
-                qwenClient,
+                aiClient,
                 databaseManager,
                 settingsManager,
                 stdout,
@@ -376,7 +376,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
             // Findings (tab 1) — dispose old timer, rebuild, re-register as the global sink.
             if (globalFindingsPanel != null) globalFindingsPanel.cleanup();
             globalFindingsPanel = new FindingsPanel(callbacks, helpers, databaseManager);
-            globalFindingsPanel.setQwenClient(qwenClient);
+            globalFindingsPanel.setAiClient(aiClient);
             scanManager.setFindingsPanel(globalFindingsPanel);
             mainTabbedPane.setComponentAt(1, globalFindingsPanel);
 
@@ -388,13 +388,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
 
             // Copilot (tab 3) — stop old refresh timer, rebuild, re-attach the hunter.
             if (assistantPanel != null) assistantPanel.stopRefreshTimer();
-            assistantPanel = new AssistantPanel(callbacks, qwenClient, scanManager, databaseManager,
+            assistantPanel = new AssistantPanel(callbacks, aiClient, scanManager, databaseManager,
                     targetModel, opportunityQueue, detectionPanel, settingsManager, stdout, stderr);
             if (backgroundHunter != null) assistantPanel.setHunter(backgroundHunter);
             mainTabbedPane.setComponentAt(3, assistantPanel);
 
             // Settings (tab 4) — rebuild, re-wire its apply hooks.
-            settingsPanel = new SettingsPanel(callbacks, helpers, scanManager, qwenClient,
+            settingsPanel = new SettingsPanel(callbacks, helpers, scanManager, aiClient,
                     databaseManager, settingsManager, stdout, stderr);
             settingsPanel.setAmbientApplyHook(this::applyAmbientToggles);
             settingsPanel.setLanguageApplyHook(this::applyLanguage);

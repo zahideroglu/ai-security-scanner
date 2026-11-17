@@ -15,7 +15,7 @@ public class ScanManager {
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
-    private QwenAPIClient qwenClient;
+    private AiApiClient aiClient;
     private DatabaseManager dbManager;
     private FilterEngine filterEngine;
     private Settings settings;
@@ -38,7 +38,7 @@ public class ScanManager {
 
     public ScanManager(IBurpExtenderCallbacks callbacks,
             IExtensionHelpers helpers,
-            QwenAPIClient qwenClient,
+            AiApiClient aiClient,
             DatabaseManager dbManager,
             FilterEngine filterEngine,
             Settings settings,
@@ -47,7 +47,7 @@ public class ScanManager {
 
         this.callbacks = callbacks;
         this.helpers = helpers;
-        this.qwenClient = qwenClient;
+        this.aiClient = aiClient;
         this.dbManager = dbManager;
         this.filterEngine = filterEngine;
         this.settings = settings;
@@ -62,7 +62,7 @@ public class ScanManager {
                 + "/min (" + settings.getMaxRequestsPerSecond() + "/s burst, jittered) — shared by all scan paths; "
                 + "WAF breaker: trip @ " + settings.getWafDetectionThreshold() + " block-signals/host");
         this.chainDetector = new burp.api.ChainAttackDetector(callbacks, helpers, globalRateLimiter, stdout, stderr);
-        this.workflowAnalyzer = new burp.businesslogic.WorkflowAnalyzer(qwenClient, helpers, stdout, stderr);
+        this.workflowAnalyzer = new burp.businesslogic.WorkflowAnalyzer(aiClient, helpers, stdout, stderr);
         this.executor = Executors.newFixedThreadPool(settings.getMaxConcurrent());
         this.activeScans = new ConcurrentHashMap<>();
         this.listeners = new ArrayList<>();
@@ -75,7 +75,7 @@ public class ScanManager {
 
     private boolean aiReady() {
         try {
-            return qwenClient != null && settings.getApiUrl() != null && !settings.getApiUrl().trim().isEmpty();
+            return aiClient != null && settings.getApiUrl() != null && !settings.getApiUrl().trim().isEmpty();
         } catch (Exception e) {
             return false;
         }
@@ -92,7 +92,7 @@ public class ScanManager {
         if (isFactualPassiveType(f.getType())) return;
         try {
             burp.ai.AIFalsePositiveFilter filter =
-                    new burp.ai.AIFalsePositiveFilter(qwenClient, helpers, stdout, stderr);
+                    new burp.ai.AIFalsePositiveFilter(aiClient, helpers, stdout, stderr);
             burp.ai.AIFalsePositiveFilter.ValidationResult r;
             if (isAccessControlType(f.getType()) && f.getHttpResponse() != null && !f.getHttpResponse().isEmpty()) {
                 // BOLA/IDOR: AI compares baseline (owner) vs manipulated (other id/identity) responses.
@@ -116,7 +116,7 @@ public class ScanManager {
         if (f == null || !aiReady()) return;
         try {
             burp.ai.AIFalsePositiveFilter filter =
-                    new burp.ai.AIFalsePositiveFilter(qwenClient, helpers, stdout, stderr);
+                    new burp.ai.AIFalsePositiveFilter(aiClient, helpers, stdout, stderr);
             applyVerdict(f, filter.judgeAccessControlConsensus(f.getType(), manipulation, baselineBody,
                     manipulatedBody, negativeControlBody, null));
         } catch (Exception e) {
@@ -198,7 +198,7 @@ public class ScanManager {
             java.util.List<burp.scan.Probe> probes = mod.plan(b, settings);
             if (probes == null || probes.isEmpty()) return null;
             burp.ai.AITestingAgent mutator =
-                    new burp.ai.AITestingAgent(callbacks, helpers, qwenClient, stdout, stderr);
+                    new burp.ai.AITestingAgent(callbacks, helpers, aiClient, stdout, stderr);
             burp.scan.TestSink sink = new burp.scan.TestSink(callbacks, helpers, mutator, null,
                     settings.getActiveScanParallelism(), settings.getMaxRequestsPerSecond(), globalRateLimiter, stderr);
             java.util.List<burp.scan.ProbeResult> results;
@@ -319,7 +319,7 @@ public class ScanManager {
         String ragContext = buildLocalRagContext(status.getUrl(), httpRequest, httpResponse);
 
         // Build prompt
-        List<QwenAPIClient.Message> messages;
+        List<AiApiClient.Message> messages;
 
         if (customPrompt != null && !customPrompt.trim().isEmpty()) {
             messages = PromptBuilder.buildConversationPrompt(
@@ -332,9 +332,9 @@ public class ScanManager {
             insertSystemMessageAfterFirst(messages, ragContext);
         }
 
-        // Call Qwen API
+        // Call AI API
         long startTime = System.currentTimeMillis();
-        JSONObject apiResponse = qwenClient.chatCompletion(messages);
+        JSONObject apiResponse = aiClient.chatCompletion(messages);
         long duration = System.currentTimeMillis() - startTime;
 
         // Parse response
@@ -411,12 +411,12 @@ public class ScanManager {
         notifyListeners("scan_completed", status.getScanId(), status.getUrl(), status.getTabId(), result);
     }
 
-    private void insertSystemMessageAfterFirst(List<QwenAPIClient.Message> messages, String content) {
+    private void insertSystemMessageAfterFirst(List<AiApiClient.Message> messages, String content) {
         if (messages == null || content == null || content.isEmpty()) {
             return;
         }
         int insertIndex = Math.min(1, messages.size());
-        messages.add(insertIndex, new QwenAPIClient.Message("system", content));
+        messages.add(insertIndex, new AiApiClient.Message("system", content));
     }
 
     private String buildLocalRagContext(String url, String httpRequest, String httpResponse) {
@@ -730,10 +730,10 @@ public class ScanManager {
             int found = 0;
             try {
                 burp.ambient.SiteAgentOrchestrator orch = settings.isAmbientShareRateLimiterWithManual()
-                        ? new burp.ambient.SiteAgentOrchestrator(callbacks, helpers, qwenClient, settings, this,
+                        ? new burp.ambient.SiteAgentOrchestrator(callbacks, helpers, aiClient, settings, this,
                                 multiSessionTester, globalRateLimiter,
                                 java.util.Collections.synchronizedSet(new java.util.HashSet<String>()), stdout, stderr)
-                        : new burp.ambient.SiteAgentOrchestrator(callbacks, helpers, qwenClient, settings, this,
+                        : new burp.ambient.SiteAgentOrchestrator(callbacks, helpers, aiClient, settings, this,
                                 multiSessionTester, stdout, stderr);
                 List<Finding> fs = orch.huntEndpoint(message, 0, listener);
                 found = (fs == null) ? 0 : fs.size();
@@ -777,7 +777,7 @@ public class ScanManager {
                 l.onStageStart(burp.engine.DetectionStage.EXECUTE);
                 long t0 = System.currentTimeMillis();
                 burp.scan.ActiveScanEngine engine = new burp.scan.ActiveScanEngine(
-                        callbacks, helpers, qwenClient, settings, stdout, stderr, globalRateLimiter, true); // single request: full host-level checks
+                        callbacks, helpers, aiClient, settings, stdout, stderr, globalRateLimiter, true); // single request: full host-level checks
                 List<Finding> findings = engine.scan(message, "active-scan", l);
                 burp.engine.StageResult exec = burp.engine.StageResult.ok(
                         burp.engine.DetectionStage.EXECUTE, findings.size() + " aday bulgu");
@@ -1079,7 +1079,7 @@ public class ScanManager {
                     if (alsoAgentic) {
                         try {
                             idEndpoints.addAll(new burp.recon.AiEndpointDiscoverer(
-                                    callbacks, helpers, qwenClient, stdout, stderr)
+                                    callbacks, helpers, aiClient, stdout, stderr)
                                     .discover(seed, globalRateLimiter, l));
                         } catch (Exception ignore) {}
                     }
@@ -1122,7 +1122,7 @@ public class ScanManager {
                 // (replay each victim's object as every other identity; read + write-IDOR). The strong path.
                 if (model.roles.size() >= 2 && model.totalObjects() > 0) {
                     burp.authz.ScenarioAccessTester tester = new burp.authz.ScenarioAccessTester(
-                            callbacks, helpers, mtester, qwenClient, globalRateLimiter, stdout, stderr);
+                            callbacks, helpers, mtester, aiClient, globalRateLimiter, stdout, stderr);
                     java.util.List<Finding> findings = tester.run(model, sessions, includeMutating, l);
                     for (Finding f : findings) {
                         if (f.isFalsePositive()) fp++; else real++;
@@ -1152,7 +1152,7 @@ public class ScanManager {
                                 if (o.request != null) chainTargets.add(o.request);
                         try { chainTargets.addAll(selectSiteTargets(seed, "both")); } catch (Exception ignore) {}
                         burp.authz.ChainBolaTester chain = new burp.authz.ChainBolaTester(
-                                callbacks, helpers, mtester, qwenClient, globalRateLimiter, stdout, stderr);
+                                callbacks, helpers, mtester, aiClient, globalRateLimiter, stdout, stderr);
                         for (Finding f : chain.run(chainTargets, sessions, host, includeMutating, l)) {
                             if (f.isFalsePositive()) fp++; else real++;
                             reportFindingDeduped(seed, f, "chain-bola", "Chain BOLA", seen);
@@ -1261,7 +1261,7 @@ public class ScanManager {
                                           MultiSessionTester mtester, boolean includeMutating,
                                           burp.engine.StageListener listener) {
         burp.engine.AgentPentestEngine agent = new burp.engine.AgentPentestEngine(
-                callbacks, helpers, qwenClient, settings, this, mtester, stdout, stderr);
+                callbacks, helpers, aiClient, settings, this, mtester, stdout, stderr);
         agent.setAccessModel(model);
         agent.setSharedRateLimiter(globalRateLimiter);
         agent.setForceSafeMode(!includeMutating);
@@ -1291,7 +1291,7 @@ public class ScanManager {
                 // directory brute-forcing unless content discovery is explicitly enabled (default OFF).
                 final boolean contentDisc = settings.isContentDiscoveryEnabled();
                 burp.recon.AiEndpointDiscoverer disc = new burp.recon.AiEndpointDiscoverer(
-                        callbacks, helpers, qwenClient, stdout, stderr);
+                        callbacks, helpers, aiClient, stdout, stderr);
                 List<IHttpRequestResponse> discovered = disc.discover(seed, globalRateLimiter, l, contentDisc);
                 burp.recon.ForcedBrowser fb = null;
                 if (contentDisc) {
@@ -1309,7 +1309,7 @@ public class ScanManager {
 
                 l.onStageStart(burp.engine.DetectionStage.EXECUTE);
                 burp.scan.ActiveScanEngine engine = new burp.scan.ActiveScanEngine(
-                        callbacks, helpers, qwenClient, settings, stdout, stderr, globalRateLimiter, false);
+                        callbacks, helpers, aiClient, settings, stdout, stderr, globalRateLimiter, false);
                 java.util.Set<String> seen = new java.util.HashSet<>();
                 int total = 0;
 
@@ -1488,7 +1488,7 @@ public class ScanManager {
 
             java.util.Set<String> reportedKeys = java.util.Collections.synchronizedSet(new HashSet<String>());
             burp.ambient.SiteAgentOrchestrator orch = new burp.ambient.SiteAgentOrchestrator(
-                    callbacks, helpers, qwenClient, settings, this, multiSessionTester,
+                    callbacks, helpers, aiClient, settings, this, multiSessionTester,
                     globalRateLimiter, reportedKeys, stdout, stderr);
             orch.setForceSafeMode(true); // autonomous batch: never more aggressive than a human scan
 
@@ -1570,7 +1570,7 @@ public class ScanManager {
                 }
 
                 burp.scan.ActiveScanEngine engine =
-                        new burp.scan.ActiveScanEngine(callbacks, helpers, qwenClient, settings, stdout, stderr, globalRateLimiter);
+                        new burp.scan.ActiveScanEngine(callbacks, helpers, aiClient, settings, stdout, stderr, globalRateLimiter);
 
                 // Run-level dedup: collapse site-wide repeats (e.g. missing headers
                 // reported on every page) to a single finding per scan.

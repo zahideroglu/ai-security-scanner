@@ -10,11 +10,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Universal AI API Client - Supports both Qwen and Gateway APIs
- * 
+ * Universal AI API Client - supports hosted (OpenAI-compatible), local (Ollama/LM Studio/llama.cpp)
+ * and enterprise gateway backends behind one interface.
+ *
  * @author Zahid Eroglu
  */
-public class QwenAPIClient {
+public class AiApiClient {
 
     private String apiUrl;
     private String apiKey;
@@ -32,8 +33,8 @@ public class QwenAPIClient {
     private GatewayTokenClient gatewayClient;
     private boolean useGateway;
 
-    // Constructor for Qwen API
-    public QwenAPIClient(String apiUrl, String apiKey, String model, int timeout, boolean allowInsecureSsl) {
+    // Constructor for AI API
+    public AiApiClient(String apiUrl, String apiKey, String model, int timeout, boolean allowInsecureSsl) {
         this.apiUrl = apiUrl;
         this.apiKey = apiKey;
         this.model = model;
@@ -50,7 +51,7 @@ public class QwenAPIClient {
     }
 
     // Constructor for Gateway API
-    public QwenAPIClient(String keycloakUrl, String apiUrl, String username, String password,
+    public AiApiClient(String keycloakUrl, String apiUrl, String username, String password,
             String clientId, String clientSecret, String requestedSubject, int timeout, boolean allowInsecureSsl) {
         this.gatewayClient = new GatewayTokenClient(
                 keycloakUrl, apiUrl, username, password, clientId, clientSecret, requestedSubject, timeout,
@@ -70,9 +71,9 @@ public class QwenAPIClient {
     /**
      * Factory method to create appropriate client based on provider
      */
-    public static QwenAPIClient createClient(Settings settings) {
+    public static AiApiClient createClient(Settings settings) {
         if ("gateway".equals(settings.getApiProvider())) {
-            return new QwenAPIClient(
+            return new AiApiClient(
                     "https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/token",
                     settings.getGatewayApiUrl(),
                     settings.getGatewayUsername(),
@@ -84,15 +85,15 @@ public class QwenAPIClient {
                     settings.isAllowInsecureSsl());
         } else if ("local".equals(settings.getApiProvider())) {
             // Local AI model (Ollama / LM Studio / llama.cpp - OpenAI compatible)
-            return new QwenAPIClient(
+            return new AiApiClient(
                     settings.getLocalApiUrl(),
                     settings.getLocalApiKey(),
                     settings.getLocalModel(),
                     settings.getTimeout(),
                     settings.isAllowInsecureSsl());
         } else {
-            // Default to Qwen API
-            return new QwenAPIClient(
+            // Default to AI API
+            return new AiApiClient(
                     settings.getApiUrl(),
                     settings.getApiKey(),
                     settings.getModel(),
@@ -164,7 +165,7 @@ public class QwenAPIClient {
     public JSONObject chatCompletion(List<Message> messages, double temperature, int maxTokens,
                                      String modelOverride, int maxRetries) throws Exception {
         if (useGateway) {
-            // The gateway client records the SUCCESS (token usage) itself; mirror the Qwen path by
+            // The gateway client records the SUCCESS (token usage) itself; mirror the direct path by
             // also recording FAILURES here, so 429/timeout/error calls show up in AI Usage stats
             // instead of silently vanishing (the user only saw successes counted otherwise).
             try {
@@ -174,14 +175,14 @@ public class QwenAPIClient {
                 throw e;
             }
         } else {
-            return chatCompletionQwen(messages, temperature, maxTokens, modelOverride, maxRetries);
+            return chatCompletionDirect(messages, temperature, maxTokens, modelOverride, maxRetries);
         }
     }
 
     /**
-     * Send chat completion request to Qwen API
+     * Send chat completion request to AI API
      */
-    private JSONObject chatCompletionQwen(List<Message> messages, double temperature, int maxTokens, String modelOverride, int maxRetries) throws Exception {
+    private JSONObject chatCompletionDirect(List<Message> messages, double temperature, int maxTokens, String modelOverride, int maxRetries) throws Exception {
         String endpoint = apiUrl + "/chat/completions";
 
         // Build request payload
@@ -255,14 +256,14 @@ public class QwenAPIClient {
             ConnectionTestResult result = gatewayClient.testConnectionDetailed();
             return result;
         } else {
-            return testConnectionDetailedQwen();
+            return testConnectionDetailedDirect();
         }
     }
 
     /**
-     * Test Qwen API connection with detailed error info
+     * Test AI API connection with detailed error info
      */
-    private ConnectionTestResult testConnectionDetailedQwen() {
+    private ConnectionTestResult testConnectionDetailedDirect() {
         ConnectionTestResult result = new ConnectionTestResult();
         result.endpoint = apiUrl + "/models"; // Use full endpoint for clarity
         result.model = model;

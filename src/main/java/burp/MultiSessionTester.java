@@ -14,7 +14,7 @@ public class MultiSessionTester {
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
-    private QwenAPIClient aiClient;
+    private AiApiClient aiClient;
     private PrintWriter stdout;
     private PrintWriter stderr;
 
@@ -23,7 +23,7 @@ public class MultiSessionTester {
     private UserSession currentActiveSession;
 
     public MultiSessionTester(IBurpExtenderCallbacks callbacks, IExtensionHelpers helpers,
-                             QwenAPIClient aiClient, PrintWriter out, PrintWriter err) {
+                             AiApiClient aiClient, PrintWriter out, PrintWriter err) {
         this.callbacks = callbacks;
         this.helpers = helpers;
         this.aiClient = aiClient;

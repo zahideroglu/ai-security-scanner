@@ -17,13 +17,13 @@ public class AITestingAgent {
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
-    private QwenAPIClient aiClient;
+    private AiApiClient aiClient;
     private PrintWriter stdout;
     private PrintWriter stderr;
 
     public AITestingAgent(IBurpExtenderCallbacks callbacks,
                          IExtensionHelpers helpers,
-                         QwenAPIClient aiClient,
+                         AiApiClient aiClient,
                          PrintWriter stdout,
                          PrintWriter stderr) {
         this.callbacks = callbacks;
@@ -124,8 +124,8 @@ public class AITestingAgent {
             }
 
             // Ask AI
-            List<QwenAPIClient.Message> messages = new ArrayList<>();
-            messages.add(new QwenAPIClient.Message("system",
+            List<AiApiClient.Message> messages = new ArrayList<>();
+            messages.add(new AiApiClient.Message("system",
                 "You are an expert penetration tester. " +
                 "Analyze HTTP requests and create precise test plans. " +
                 "Decide EXACTLY what requests to send to find vulnerabilities."
@@ -133,7 +133,7 @@ public class AITestingAgent {
                     ? " Write the \"description\", \"expectedBehavior\" and \"vulnerableIf\" field VALUES in TURKISH; "
                       + "keep all JSON keys and the attackType/location/targetParameter/payload values in English."
                     : "")));
-            messages.add(new QwenAPIClient.Message("user", prompt));
+            messages.add(new AiApiClient.Message("user", prompt));
 
             JSONObject aiResponse = aiClient.chatCompletion(messages);
             String content = aiResponse.getJSONArray("choices")
@@ -437,8 +437,8 @@ public class AITestingAgent {
                 "Vulnerable if: " + test.vulnerableIf + "\n\n" +
                 "Answer with YES or NO and brief explanation.";
 
-            List<QwenAPIClient.Message> messages = new ArrayList<>();
-            messages.add(new QwenAPIClient.Message("user", prompt));
+            List<AiApiClient.Message> messages = new ArrayList<>();
+            messages.add(new AiApiClient.Message("user", prompt));
 
             JSONObject aiResponse = aiClient.chatCompletion(messages);
             String content = aiResponse.getJSONArray("choices")
@@ -477,8 +477,8 @@ public class AITestingAgent {
                 "2. Are additional tests needed?\n" +
                 "3. Suggestions for next steps";
 
-            List<QwenAPIClient.Message> messages = new ArrayList<>();
-            messages.add(new QwenAPIClient.Message("user", prompt));
+            List<AiApiClient.Message> messages = new ArrayList<>();
+            messages.add(new AiApiClient.Message("user", prompt));
 
             JSONObject aiResponse = aiClient.chatCompletion(messages);
             String content = aiResponse.getJSONArray("choices")
