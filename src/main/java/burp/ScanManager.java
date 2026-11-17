@@ -216,10 +216,45 @@ public class ScanManager {
             try { f.setHttpRequest(new String(seed.getRequest(), "UTF-8")); } catch (Exception ignore) {}
             aiJudge(f, seed);                              // AI confirm/refute + suppress-unless-confirmed flag
             if (shouldSuppress(f)) return null;            // AI refuted / unavailable / undecided → not proven
+            independentSecondPass(f);                      // decoupled re-verification: CONFIRMED vs NEEDS-REVIEW
             return f;
         } catch (Exception e) {
             if (stderr != null) stderr.println("[verifyIdorCandidate] " + e.getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Run the INDEPENDENT second verification pass on a finding that already passed the first gate, then
+     * fold its three-way outcome into the finding:
+     *   REPRODUCED      → keep CONFIRMED (independent sample agrees);
+     *   NOT_REPRODUCED  → flag NEEDS-REVIEW (surface it, but cap severity — not silently confirmed/dropped);
+     *   UNAVAILABLE     → first-pass result stands (host blocked / no replayable bundle).
+     * Best-effort: never throws into the caller.
+     */
+    private void independentSecondPass(Finding f) {
+        try {
+            if (f == null || !f.hasReproBundle()) return;
+            burp.scan.IndependentVerifier iv = new burp.scan.IndependentVerifier(
+                    callbacks, helpers, aiReady() ? aiClient : null, globalRateLimiter, stdout, stderr);
+            burp.scan.IndependentVerifier.Outcome o = iv.verify(f);
+            switch (o) {
+                case REPRODUCED:
+                    f.addVerificationStep(burp.i18n.I18n.t("indep.reproduced"));
+                    break;
+                case NOT_REPRODUCED:
+                    f.setNeedsReview(true);
+                    f.setOracleVerdict(burp.Finding.OracleVerdict.INCONCLUSIVE);
+                    f.setConfidence(Math.min(f.getConfidence(), 0.5)); // caps effective severity to Medium
+                    f.addVerificationStep(burp.i18n.I18n.t("indep.needsReview"));
+                    break;
+                case UNAVAILABLE:
+                default:
+                    f.addVerificationStep(burp.i18n.I18n.t("indep.unavailable"));
+                    break;
+            }
+        } catch (Exception e) {
+            if (stderr != null) stderr.println("[independentSecondPass] " + e.getMessage());
         }
     }
 
@@ -2086,6 +2121,10 @@ public class ScanManager {
     private boolean shouldSuppress(Finding f) {
         if (f == null) return false;
         if (f.isFalsePositive()) return true;
+        // A finding the first gate CONFIRMED but the INDEPENDENT second pass could not reproduce is NOT a
+        // false positive — it is genuinely uncertain. Surface it flagged for human review (severity capped
+        // elsewhere) rather than silently dropping it. This is the only case that overrides the gate below.
+        if (f.isNeedsReview()) return false;
         // Suppress-unless-confirmed: a candidate worth reporting only if the AI CONFIRMS it (a single-session
         // IDOR with foreign owner tokens but no ownership ground truth). If the verdict is anything other than
         // CONFIRMED — AI refuted / unavailable / undecided / not configured — it stays unproven → hide it.

@@ -599,6 +599,14 @@ public final class I18n {
         put("repro.text.header", "AppSecHunter Kanıt Paketi", "AppSecHunter Reproduction Bundle");
         put("repro.text.request", "İSTEK", "REQUEST");
         put("repro.text.response", "YANIT", "RESPONSE");
+        // Independent second verification pass (context-decoupled)
+        put("indep.reproduced", "Bağımsız 2. doğrulama: çapraz-sahip sızıntı taze örnekte YENİDEN üretildi (onaylandı).", "Independent 2nd pass: cross-owner leak REPRODUCED on a fresh sample (confirmed).");
+        put("indep.needsReview", "⚠ Bağımsız 2. doğrulama sızıntıyı tekrar üretemedi — MANUEL İNCELEME gerekli (bir kez görüldü, bağımsız tekrarda doğrulanamadı).", "⚠ Independent 2nd pass could NOT reproduce the leak — NEEDS HUMAN REVIEW (seen once, not confirmed on independent replay).");
+        put("indep.unavailable", "Bağımsız 2. doğrulama yapılamadı (host bloklu / yeniden gönderilemedi) — ilk-geçiş sonucu korundu.", "Independent 2nd pass unavailable (host blocked / could not re-send) — first-pass result kept.");
+        put("indep.notReproduced.status", "Bağımsız tekrar HTTP {0} döndü (200 nesne değil).", "Independent replay returned HTTP {0} (not a 200 object).");
+        put("indep.notReproduced.det", "Bağımsız tekrarda yabancı sahip belirteci bulunamadı.", "No foreign owner tokens on the independent replay.");
+        put("indep.notReproduced.aiSplit", "Deterministik tekrar üretti ama temiz-bağlam AI çürüttü (çelişki).", "Deterministic re-check reproduced it but the clean-context AI refuted it (disagreement).");
+        put("findings.badge.needsReview", "İNCELE", "NEEDS REVIEW");
         put("findings.menu.generatePoC", "💻 PoC Üret", "💻 Generate PoC");
         put("findings.menu.viewDetails", "Ayrıntıları Gör", "View Details");
         put("findings.menu.markFalsePositive", "❌ False Positive Olarak İşaretle", "❌ Mark as False Positive");

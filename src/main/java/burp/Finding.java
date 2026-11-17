@@ -40,6 +40,10 @@ public class Finding {
      *  owner tokens but no ownership ground truth). If the AI refutes / is unavailable / is undecided, the
      *  reporting layer suppresses it (suppress-unless-confirmed). Runtime-only; not persisted. */
     private boolean needsAiConfirmation = false;
+    /** Set when an INDEPENDENT second verification pass could not reproduce a first-pass-confirmed finding.
+     *  Such a finding is neither silently confirmed nor silently dropped — it is surfaced, flagged for human
+     *  review, with its effective severity capped. Runtime-only; not persisted. */
+    private boolean needsReview = false;
 
     // ===== Retest state (on-demand "is it fixed yet?" re-check; session-scoped, not persisted) =====
     /** Outcome of the most recent retest of this finding. */
@@ -517,6 +521,10 @@ public class Finding {
 
     public boolean needsAiConfirmation() { return needsAiConfirmation; }
     public void setNeedsAiConfirmation(boolean b) { this.needsAiConfirmation = b; }
+
+    /** True when an independent second pass could not reproduce this finding — surface it, flagged for review. */
+    public boolean isNeedsReview() { return needsReview; }
+    public void setNeedsReview(boolean b) { this.needsReview = b; }
 
     public List<String> getVerificationSteps() { return verificationSteps; }
     public void addVerificationStep(String s) {

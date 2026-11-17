@@ -139,6 +139,14 @@ public final class FindingHtmlRenderer {
 
         if (includeSummary) h.append(metricsCardHtml(f));
 
+        // Needs-review banner: first gate liked it, the independent second pass could not reproduce it.
+        if (f.isNeedsReview()) {
+            h.append("<div style='margin:0 0 10px 0; padding:8px 12px; border-radius:6px; "
+                    + "background-color:#fff4d6; border:1px solid #e0a106; color:#7a5600;'>"
+                    + "<b>⚠ " + I18n.t("findings.badge.needsReview") + "</b> &nbsp; "
+                    + escapeHtml(I18n.t("indep.needsReview")) + "</div>");
+        }
+
         String url = f.getAffectedUrl();
         if (url != null && !url.isEmpty()) {
             h.append(sectionCardHtml(I18n.t("findings.heading.affectedUrl"),
