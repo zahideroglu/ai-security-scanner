@@ -35,6 +35,8 @@ public class ScanManager {
     private MultiSessionTester multiSessionTester; // for the agentic pentester's session replay (may be null)
     private burp.session.SessionKeeper sessionKeeper; // session freshness / auto-relogin (may be null)
     private burp.engine.SharedRateLimiter globalRateLimiter; // shared by manual + autonomous agents
+    /** Hosts already fingerprinted for exposed AI-app frameworks, so the probe runs once per host. */
+    private final java.util.Set<String> aiFwProbedHosts = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     public ScanManager(IBurpExtenderCallbacks callbacks,
             IExtensionHelpers helpers,
@@ -1273,6 +1275,44 @@ public class ScanManager {
         } catch (Exception ignore) {
         }
         agent.run(seed, "scenario-agent", listener); // owns its stage lifecycle + reports internally
+    }
+
+    /**
+     * Host-level fingerprint for exposed AI-application frameworks (Langflow/Flowise/LangServe/
+     * Ollama) — an emerging, high-value surface Burp's scanner does not cover. Runs once per host
+     * (guarded by {@link #aiFwProbedHosts}); SAFE benign identification GETs only, no exploit
+     * payloads. Wired into the "everything" campaign as its own lightweight step.
+     */
+    public void runAiFrameworkProbe(IHttpRequestResponse seed, DetectionRunView ui) {
+        final int[] found = {0};
+        final boolean[] aborted = {false};
+        Thread t = new Thread(() -> {
+            try {
+                String host = helpers.analyzeRequest(seed).getUrl().getHost();
+                if (ui != null) ui.prepareSiteScan((host == null ? "?" : host) + " · AI uygulama yüzeyi", 1);
+                burp.engine.StageListener l = (ui != null) ? ui : new burp.engine.LoggingStageListener(stdout);
+                l.onStageStart(burp.engine.DetectionStage.RECON);
+                if (host != null && aiFwProbedHosts.add(host.toLowerCase())) {
+                    burp.recon.AiFrameworkProbe fwp = new burp.recon.AiFrameworkProbe(callbacks, helpers, stdout);
+                    java.util.Set<String> seen = new java.util.HashSet<>();
+                    for (Finding f : fwp.probe(seed, globalRateLimiter, l)) {
+                        aiJudge(f, seed);
+                        if (reportFindingDeduped(seed, f, "ai-framework", "AI Framework Exposure", seen)) found[0]++;
+                    }
+                }
+                l.onStageComplete(burp.engine.DetectionStage.RECON,
+                        burp.engine.StageResult.ok(burp.engine.DetectionStage.RECON,
+                                found[0] > 0 ? (found[0] + " AI uygulama çatısı ifşası")
+                                             : "AI uygulama çatısı tespit edilmedi"));
+            } catch (Exception e) {
+                stderr.println("[ai-framework] error: " + e.getMessage());
+                aborted[0] = true;
+            } finally {
+                if (ui != null) ui.siteDone(found[0], aborted[0]);
+            }
+        }, "ai-framework");
+        t.setDaemon(true);
+        t.start();
     }
 
     /**

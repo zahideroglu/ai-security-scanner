@@ -754,6 +754,11 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
             rerunnableSite(host + " (oto yetki matrisi)", seed,
                     (s, v) -> scanManager.runAutoAuthMatrix(s, "both", aggressive, multiSessionTester, authMatrixPanel, v));
 
+            // AI-application framework exposure fingerprint (Langflow/Flowise/LangServe/Ollama) —
+            // once per host, safe benign GETs; deterministic so it runs with or without AI configured.
+            rerunnableSite(host + " (AI uygulama yüzeyi)", seed,
+                    (s, v) -> scanManager.runAiFrameworkProbe(s, v));
+
             if (aiOn) {
                 // Merged BOLA/BAC: ownership-model + negative-control ground-truth, the AI-driven
                 // cross-owner/multi-step agent, AND AI surface discovery — all over ONE shared AccessModel.
