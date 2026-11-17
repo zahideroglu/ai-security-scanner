@@ -33,6 +33,9 @@ public class Finding {
     private String baselineResponse; // legitimate/owner response body, for comparison evidence
     private OracleVerdict oracleVerdict = OracleVerdict.NONE;
     private final List<String> verificationSteps = new ArrayList<>();
+    /** Ordered, developer-replayable proof transactions (own → attack → control → public[/victim]) — the
+     *  "reproduction bundle" a defender can re-run in Repeater / as curl / as HAR. Runtime-only; not persisted. */
+    private final List<burp.report.ReproStep> reproSteps = new ArrayList<>();
     /** Candidate that is only worth reporting if the AI CONFIRMS it (e.g. a single-session IDOR with foreign
      *  owner tokens but no ownership ground truth). If the AI refutes / is unavailable / is undecided, the
      *  reporting layer suppresses it (suppress-unless-confirmed). Runtime-only; not persisted. */
@@ -515,6 +518,12 @@ public class Finding {
     public void addVerificationStep(String s) {
         if (s != null && !s.trim().isEmpty() && !verificationSteps.contains(s.trim())) verificationSteps.add(s.trim());
     }
+
+    // ===== Reproduction bundle (ordered proof transactions; exportable as Repeater/curl/HAR) =====
+    public List<burp.report.ReproStep> getReproSteps() { return reproSteps; }
+    public void addReproStep(burp.report.ReproStep s) { if (s != null) reproSteps.add(s); }
+    /** True when this finding carries a replayable proof trail (at least the attack step). */
+    public boolean hasReproBundle() { return !reproSteps.isEmpty(); }
 
     /** Iron rule: a reported high-severity finding must carry a deterministic comparison/oracle result. */
     public boolean hasDeterministicEvidence() {

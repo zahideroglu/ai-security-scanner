@@ -1476,6 +1476,26 @@ public class FindingsPanel extends JPanel {
         sendToRepeaterItem.addActionListener(e -> sendToRepeater(row));
         popup.add(sendToRepeaterItem);
 
+        // Reproduction bundle (only when the finding carries a replayable proof trail)
+        boolean hasRepro = row >= 0 && row < findings.size() && findings.get(row).hasReproBundle();
+        if (hasRepro) {
+            JMenu reproMenu = new JMenu(I18n.t("findings.menu.repro"));
+            reproMenu.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            JMenuItem reproRepeater = new JMenuItem(I18n.t("findings.menu.reproRepeater"));
+            reproRepeater.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            reproRepeater.addActionListener(e -> sendReproBundleToRepeater(row));
+            reproMenu.add(reproRepeater);
+            JMenuItem reproCurl = new JMenuItem(I18n.t("findings.menu.reproCurl"));
+            reproCurl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            reproCurl.addActionListener(e -> copyReproBundle(row, "curl"));
+            reproMenu.add(reproCurl);
+            JMenuItem reproHar = new JMenuItem(I18n.t("findings.menu.reproHar"));
+            reproHar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            reproHar.addActionListener(e -> copyReproBundle(row, "har"));
+            reproMenu.add(reproHar);
+            popup.add(reproMenu);
+        }
+
         JMenuItem generatePoCItem = new JMenuItem(I18n.t("findings.menu.generatePoC"));
         generatePoCItem.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         generatePoCItem.addActionListener(e -> generatePoC(row));
@@ -1828,6 +1848,56 @@ public class FindingsPanel extends JPanel {
                 I18n.t("findings.msg.repeaterFailed") + " " + ex.getMessage(),
                 I18n.t("findings.title.error"),
                 JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Send every transaction in the finding's reproduction bundle to Burp Repeater, each as its own
+     * tab captioned with its role (own / attack / control / public) — the defender replays the proof
+     * trail without AppSecHunter.
+     */
+    private void sendReproBundleToRepeater(int row) {
+        if (row < 0 || row >= findings.size()) return;
+        Finding finding = findings.get(row);
+        java.util.List<burp.report.ReproStep> steps = finding.getReproSteps();
+        if (steps.isEmpty()) {
+            JOptionPane.showMessageDialog(this, I18n.t("findings.msg.noRepro"),
+                    I18n.t("findings.title.error"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int sent = 0;
+        for (burp.report.ReproStep s : steps) {
+            if (!s.hasRequest() || s.getHost() == null || s.getHost().isEmpty()) continue;
+            int port = s.getPort() > 0 ? s.getPort() : (s.isHttps() ? 443 : 80);
+            String caption = finding.getType() + " · " + burp.report.ReproExporter.roleLabel(s.getRole());
+            callbacks.sendToRepeater(s.getHost(), port, s.isHttps(), s.getRequest(), caption);
+            sent++;
+        }
+        JOptionPane.showMessageDialog(this, I18n.t("findings.msg.reproSent", sent),
+                I18n.t("findings.title.success"), JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    /** Copy the finding's reproduction bundle to the clipboard as curl commands or a HAR document. */
+    private void copyReproBundle(int row, String format) {
+        if (row < 0 || row >= findings.size()) return;
+        Finding finding = findings.get(row);
+        java.util.List<burp.report.ReproStep> steps = finding.getReproSteps();
+        if (steps.isEmpty()) {
+            JOptionPane.showMessageDialog(this, I18n.t("findings.msg.noRepro"),
+                    I18n.t("findings.title.error"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String text = "har".equals(format)
+                ? burp.report.ReproExporter.toHar(steps)
+                : burp.report.ReproExporter.toCurl(steps);
+        try {
+            java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
+                    .setContents(new java.awt.datatransfer.StringSelection(text), null);
+            JOptionPane.showMessageDialog(this, I18n.t("findings.msg.reproCopied"),
+                    I18n.t("findings.title.success"), JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, I18n.t("findings.msg.errorPrefix") + " " + ex.getMessage(),
+                    I18n.t("findings.title.error"), JOptionPane.ERROR_MESSAGE);
         }
     }
 

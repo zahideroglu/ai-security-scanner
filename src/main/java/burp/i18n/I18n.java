@@ -575,6 +575,24 @@ public final class I18n {
         put("findings.msg.errorPrefix", "Hata:", "Error:");
         put("findings.msg.pocError", "PoC üretme hatası:", "Error generating PoC:");
         put("findings.menu.sendToRepeater", "📤 Repeater'a Gönder", "📤 Send to Repeater");
+        // Reproduction bundle (replayable proof trail)
+        put("findings.menu.repro", "🧾 Kanıt Paketi", "🧾 Reproduction Bundle");
+        put("findings.menu.reproRepeater", "Tüm adımları Repeater'a gönder", "Send all steps to Repeater");
+        put("findings.menu.reproCurl", "curl olarak kopyala", "Copy as curl");
+        put("findings.menu.reproHar", "HAR olarak kopyala", "Copy as HAR");
+        put("findings.msg.noRepro", "Bu bulgunun kanıt paketi yok.", "This finding has no reproduction bundle.");
+        put("findings.msg.reproSent", "Kanıt paketi Repeater'a gönderildi ({0} adım).", "Reproduction bundle sent to Repeater ({0} steps).");
+        put("findings.msg.reproCopied", "Kanıt paketi panoya kopyalandı.", "Reproduction bundle copied to clipboard.");
+        put("repro.role.own", "Sahip isteği (kendi nesnesi)", "Owner request (own object)");
+        put("repro.role.attack", "Saldırı (kurbanın id'si)", "Attack (victim's id)");
+        put("repro.role.control", "Negatif kontrol (geçersiz id)", "Negative control (invalid id)");
+        put("repro.role.public", "Public sonda (yetki kaldırılmış)", "Public probe (auth stripped)");
+        put("repro.role.victim", "Kurban oturumu (ground-truth)", "Victim session (ground truth)");
+        put("repro.detail.authStripped", "yetki başlıkları kaldırıldı", "auth headers stripped");
+        put("repro.curl.header", "AppSecHunter kanıt paketi — adımları sırayla çalıştırın", "AppSecHunter reproduction bundle — run the steps in order");
+        put("repro.text.header", "AppSecHunter Kanıt Paketi", "AppSecHunter Reproduction Bundle");
+        put("repro.text.request", "İSTEK", "REQUEST");
+        put("repro.text.response", "YANIT", "RESPONSE");
         put("findings.menu.generatePoC", "💻 PoC Üret", "💻 Generate PoC");
         put("findings.menu.viewDetails", "Ayrıntıları Gör", "View Details");
         put("findings.menu.markFalsePositive", "❌ False Positive Olarak İşaretle", "❌ Mark as False Positive");

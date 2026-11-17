@@ -127,13 +127,14 @@ public class IdorModule implements ScanModule {
         // Index results: negative controls (invalid id) by location|param, and live + public probes by
         // location|param|payload so each swapped id can be matched to its anonymous public twin.
         Map<String, String> negCtrl = new HashMap<>();
+        Map<String, ProbeResult> negPr = new HashMap<>();   // negative-control ProbeResult (for the repro bundle)
         Map<String, ProbeResult> live = new HashMap<>();
         Map<String, ProbeResult> pub = new HashMap<>();
         for (ProbeResult r : results) {
             if (r.probe == null || !r.ok()) continue;
             String lp = r.probe.location + "|" + r.probe.targetParameter;
             String full = lp + "|" + r.probe.payload;
-            if ("IDOR-NEG".equals(r.probe.attackType)) negCtrl.put(lp, r.bodySnippet);
+            if ("IDOR-NEG".equals(r.probe.attackType)) { negCtrl.put(lp, r.bodySnippet); negPr.put(lp, r); }
             else if ("IDOR".equals(r.probe.attackType)) live.put(full, r);
             else if ("IDOR-PUB".equals(r.probe.attackType)) pub.put(full, r);
         }
@@ -222,9 +223,44 @@ public class IdorModule implements ScanModule {
             // is suppressed downstream (suppress-unless-confirmed) rather than shown as a guess.
             f.setOracleVerdict(burp.Finding.OracleVerdict.INCONCLUSIVE);
             f.setNeedsAiConfirmation(true);
+            attachReproBundle(f, b, r, negPr.get(lp), pr);
             findings.add(f);
         }
         return findings;
+    }
+
+    /**
+     * Attach the replayable REPRODUCTION BUNDLE to a confirmed-candidate finding: the ordered proof
+     * transactions a defender can re-run without AppSecHunter — (1) own object, (2) the id-swap attack,
+     * (3) the invalid-id control, (4) the auth-stripped public probe. Pure record of what the verifier
+     * already sent; best-effort (never breaks the finding).
+     */
+    private void attachReproBundle(Finding f, Baseline b, ProbeResult attack, ProbeResult ctrl, ProbeResult pub) {
+        try {
+            burp.IHttpService svc = (b.base != null) ? b.base.getHttpService() : null;
+            String host = svc != null ? svc.getHost() : b.host;
+            int port = svc != null ? svc.getPort() : -1;
+            boolean https = svc != null && "https".equalsIgnoreCase(svc.getProtocol());
+            if (b.base != null && b.base.getRequest() != null) {
+                f.addReproStep(burp.report.ReproStep.own(
+                        b.base.getRequest(), b.base.getResponse(), host, port, https, b.method + " " + b.path));
+            }
+            if (attack != null && attack.rawRequest != null) {
+                f.addReproStep(burp.report.ReproStep.attack(
+                        attack.rawRequest, attack.rawResponse, host, port, https,
+                        attack.probe.targetParameter + " → " + attack.probe.payload));
+            }
+            if (ctrl != null && ctrl.rawRequest != null) {
+                f.addReproStep(burp.report.ReproStep.control(
+                        ctrl.rawRequest, ctrl.rawResponse, host, port, https, INVALID_ID));
+            }
+            if (pub != null && pub.rawRequest != null) {
+                f.addReproStep(burp.report.ReproStep.publicProbe(
+                        pub.rawRequest, pub.rawResponse, host, port, https, I18n.t("repro.detail.authStripped")));
+            }
+        } catch (Exception ignore) {
+            // best-effort: a finding is still valid without its bundle
+        }
     }
 
     /** A short, readable sample (max 3) of the foreign owner tokens that triggered the finding. */
