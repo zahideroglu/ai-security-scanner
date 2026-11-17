@@ -124,6 +124,15 @@ public class AiFrameworkProbe {
                 }
 
                 String url = root;
+                // CVE→KEV correlation: if any cited CVE is known to be ACTIVELY EXPLOITED in the wild,
+                // flag it in the report and lift severity to at least High (attackers are using it now).
+                String exploitation = I18n.t("f.aiapp.exp", fw.cveNote);
+                java.util.List<String> kev = burp.scan.KnownExploited.matched(fw.cveNote);
+                if (!kev.isEmpty()) {
+                    exploitation = exploitation + "\n\n" + I18n.t("f.kev.note", String.join(", ", kev));
+                    if ("Medium".equals(severity)) severity = "High";
+                    confidence = Math.max(confidence, 0.90);
+                }
                 Finding f = new Finding(
                         "AI Application Framework Exposure",
                         severity,
@@ -132,7 +141,7 @@ public class AiFrameworkProbe {
                         url,
                         I18n.t("f.aiapp.ev", hitPath, hitStatus, hitMarker,
                                 dangerNote.isEmpty() ? "—" : dangerNote),
-                        I18n.t("f.aiapp.exp", fw.cveNote),
+                        exploitation,
                         I18n.t("f.aiapp.rem", fw.name));
                 out.add(f);
                 if (stdout != null) stdout.println("[AiFrameworkProbe] " + fw.name + " @ " + host
