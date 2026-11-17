@@ -517,6 +517,9 @@ public final class I18n {
         put("findings.col.url", "URL", "URL");
         put("findings.btn.clearAll", "Hepsini Temizle", "Clear All");
         put("findings.btn.export", "Dışa Aktar", "Export");
+        put("findings.btn.sarif", "SARIF", "SARIF");
+        put("findings.btn.sarif.tip", "Bulguları SARIF 2.1.0 olarak kaydet (GitHub code scanning / DefectDojo; CVSS vektörü + OWASP API/WSTG etiketleri)", "Save findings as SARIF 2.1.0 (GitHub code scanning / DefectDojo; CVSS vector + OWASP API/WSTG tags)");
+        put("findings.msg.sarifSaved", "SARIF dosyası kaydedildi:", "SARIF file saved:");
         put("findings.btn.falsePositive", "False Positive", "False Positive");
         put("findings.detail.selectPrompt", "Ayrıntıları görmek için bir bulgu seçin", "Select a finding to view details");
         put("findings.btn.sendToRepeater", "Repeater'a Gönder", "Send to Repeater");
@@ -534,6 +537,9 @@ public final class I18n {
         put("findings.label.description", "Açıklama:", "Description:");
         put("findings.label.cwe", "CWE:", "CWE:");
         put("findings.label.owasp", "OWASP:", "OWASP:");
+        put("findings.label.owaspApi", "OWASP API:", "OWASP API:");
+        put("findings.label.wstg", "WSTG:", "WSTG:");
+        put("findings.label.cvssVector", "CVSS Vektörü:", "CVSS Vector:");
         put("findings.label.evidence", "Kanıt:", "Evidence:");
         put("findings.label.remediation", "Çözüm:", "Remediation:");
         put("findings.label.references", "Referanslar:", "References:");

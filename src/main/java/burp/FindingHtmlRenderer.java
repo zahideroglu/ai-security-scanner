@@ -172,7 +172,9 @@ public final class FindingHtmlRenderer {
         }
 
         String cwe = f.getCweId(), owasp = f.getOwaspCategory();
-        if ((cwe != null && !cwe.isEmpty()) || (owasp != null && !owasp.isEmpty())) {
+        String owaspApi = f.getOwaspApiCategory(), wstg = f.getWstgId(), cvssVec = f.getCvssVector();
+        if ((cwe != null && !cwe.isEmpty()) || (owasp != null && !owasp.isEmpty())
+                || !owaspApi.isEmpty() || !wstg.isEmpty()) {
             StringBuilder cls = new StringBuilder();
             if (cwe != null && !cwe.isEmpty()) {
                 cls.append("<b style='color:").append(INK_SOFT).append(";'>").append(I18n.t("findings.label.cwe"))
@@ -182,6 +184,20 @@ public final class FindingHtmlRenderer {
                 if (cls.length() > 0) cls.append(" &nbsp;&nbsp;&nbsp; ");
                 cls.append("<b style='color:").append(INK_SOFT).append(";'>").append(I18n.t("findings.label.owasp"))
                    .append("</b> <font color='#1f6feb'>").append(escapeHtml(owasp)).append("</font>");
+            }
+            if (!owaspApi.isEmpty()) {
+                if (cls.length() > 0) cls.append(" &nbsp;&nbsp;&nbsp; ");
+                cls.append("<b style='color:").append(INK_SOFT).append(";'>").append(I18n.t("findings.label.owaspApi"))
+                   .append("</b> <font color='#1f6feb'>").append(escapeHtml(owaspApi)).append("</font>");
+            }
+            if (!wstg.isEmpty()) {
+                if (cls.length() > 0) cls.append(" &nbsp;&nbsp;&nbsp; ");
+                cls.append("<b style='color:").append(INK_SOFT).append(";'>").append(I18n.t("findings.label.wstg"))
+                   .append("</b> <font color='#1f6feb'>").append(escapeHtml(wstg)).append("</font>");
+            }
+            if (cvssVec != null && !cvssVec.isEmpty()) {
+                cls.append("<br><b style='color:").append(INK_SOFT).append(";'>").append(I18n.t("findings.label.cvssVector"))
+                   .append("</b> <font color='").append(INK_SOFT).append("'>").append(escapeHtml(cvssVec)).append("</font>");
             }
             h.append(sectionCardHtml(I18n.t("findings.heading.classification"),
                     CARD_ACCENT, CARD_BG, INK_SOFT, cls.toString()));

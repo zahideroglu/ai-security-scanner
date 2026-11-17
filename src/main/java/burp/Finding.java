@@ -402,9 +402,13 @@ public class Finding {
 
         // NEW: Enhanced fields
         json.put("cvssScore", cvssScore);
+        json.put("cvssVector", getCvssVector());
         json.put("priority", priority);
         json.put("cweId", cweId != null ? cweId : "");
         json.put("owaspCategory", owaspCategory != null ? owaspCategory : "");
+        json.put("owaspApiCategory", getOwaspApiCategory());
+        String wstg = getWstgId();
+        if (!wstg.isEmpty()) json.put("wstg", wstg);
 
         if (references != null && !references.isEmpty()) {
             JSONArray refsArray = new JSONArray();
@@ -602,6 +606,14 @@ public class Finding {
 
     public String getOwaspCategory() { return owaspCategory != null ? owaspCategory : ""; }
     public void setOwaspCategory(String owaspCategory) { this.owaspCategory = owaspCategory; }
+
+    // ===== Industry-standard tags (deterministically derived from the finding class) =====
+    /** CVSS 3.1 base vector for this finding's class (the numeric score is {@link #getCvssScore()}). */
+    public String getCvssVector() { return burp.report.Standards.cvssVector(this); }
+    /** OWASP API Security Top-10 (2023) category, or "" when the class is not API-access-shaped. */
+    public String getOwaspApiCategory() { return burp.report.Standards.owaspApi(this); }
+    /** OWASP WSTG test id, or "" when the class has no confident mapping. */
+    public String getWstgId() { return burp.report.Standards.wstg(this); }
 
     /**
      * Get formatted references as string

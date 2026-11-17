@@ -351,6 +351,11 @@ public class FindingsPanel extends JPanel {
         exportBtn.addActionListener(e -> exportFindings());
         bottomPanel.add(exportBtn);
 
+        JButton sarifBtn = I18nUI.text(createStyledButton("SARIF", ColorScheme.PRIMARY_BLUE), "findings.btn.sarif");
+        I18nUI.tip(sarifBtn, "findings.btn.sarif.tip");
+        sarifBtn.addActionListener(e -> exportSarif());
+        bottomPanel.add(sarifBtn);
+
         JButton markFPBtn = I18nUI.text(createStyledButton("False Positive", ColorScheme.WARNING_ORANGE), "findings.btn.falsePositive");
         markFPBtn.addActionListener(e -> markAsFalsePositive());
         bottomPanel.add(markFPBtn);
@@ -1360,10 +1365,13 @@ public class FindingsPanel extends JPanel {
         report.append(String.format("Type: %s\n", finding.getType()));
         report.append(String.format("Severity: %s\n", finding.getSeverity().toUpperCase()));
         report.append(String.format("CVSS Score: %.1f\n", finding.getCvssScore()));
+        report.append(String.format("CVSS Vector: %s\n", finding.getCvssVector()));
         report.append(String.format("Priority: %s\n", finding.getPriority()));
         report.append(String.format("Confidence: %.0f%%\n", finding.getConfidence() * 100));
         if (finding.getCweId() != null) report.append(String.format("CWE: %s\n", finding.getCweId()));
         if (finding.getOwaspCategory() != null) report.append(String.format("OWASP: %s\n", finding.getOwaspCategory()));
+        if (!finding.getOwaspApiCategory().isEmpty()) report.append(String.format("OWASP API: %s\n", finding.getOwaspApiCategory()));
+        if (!finding.getWstgId().isEmpty()) report.append(String.format("WSTG: %s\n", finding.getWstgId()));
         report.append("\n");
 
         if (finding.getAffectedUrl() != null && !finding.getAffectedUrl().isEmpty()) {
@@ -1962,11 +1970,38 @@ public class FindingsPanel extends JPanel {
         }
         
         // Copy to clipboard
-        java.awt.datatransfer.StringSelection selection = 
+        java.awt.datatransfer.StringSelection selection =
             new java.awt.datatransfer.StringSelection(export.toString());
         java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
 
         JOptionPane.showMessageDialog(this, I18n.t("findings.msg.exportedToClipboard"));
+    }
+
+    /**
+     * Export all (non-false-positive) findings as a SARIF 2.1.0 document — ready for GitHub code
+     * scanning, DefectDojo, or any SARIF consumer, with CVSS vectors + OWASP API / WSTG tags inline.
+     */
+    private void exportSarif() {
+        if (findings == null || findings.isEmpty()) {
+            JOptionPane.showMessageDialog(this, I18n.t("findings.msg.noFindingsToExport"));
+            return;
+        }
+        JFileChooser fc = new JFileChooser();
+        fc.setSelectedFile(new java.io.File("appsechunter-findings.sarif"));
+        if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        java.io.File sel = fc.getSelectedFile();
+        if (!sel.getName().toLowerCase().endsWith(".sarif") && !sel.getName().toLowerCase().endsWith(".json")) {
+            sel = new java.io.File(sel.getParentFile(), sel.getName() + ".sarif");
+        }
+        try {
+            String sarif = burp.report.SarifWriter.write(new ArrayList<>(findings));
+            java.nio.file.Files.write(sel.toPath(), sarif.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            JOptionPane.showMessageDialog(this, I18n.t("findings.msg.sarifSaved") + "\n" + sel.getAbsolutePath(),
+                    I18n.t("findings.title.success"), JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, I18n.t("findings.msg.errorPrefix") + " " + ex.getMessage(),
+                    I18n.t("findings.title.error"), JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     /**
