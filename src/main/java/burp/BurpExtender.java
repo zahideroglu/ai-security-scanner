@@ -433,8 +433,16 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener,
      * HTTP listener - for background scanning
      */
     @Override
-    public void processHttpMessage(int toolFlag, boolean messageIsRequest, 
+    public void processHttpMessage(int toolFlag, boolean messageIsRequest,
                                    IHttpRequestResponse messageInfo) {
+        // Tag our own outgoing scan traffic so the target's defenders can distinguish authorized
+        // AppSecHunter requests from a real attack (responsible-testing hygiene). Only extender
+        // traffic is tagged; AI-provider calls use a separate client and are never touched.
+        if (messageIsRequest && toolFlag == IBurpExtenderCallbacks.TOOL_EXTENDER) {
+            burp.scan.ScanMarker.tag(messageInfo, settingsManager.getSettings(), helpers);
+            return;
+        }
+
         // Only process Proxy responses
         if (messageIsRequest || toolFlag != IBurpExtenderCallbacks.TOOL_PROXY) {
             return;

@@ -61,6 +61,8 @@ public class Settings {
     private String agentRouterMode;         // heuristic | ai | all
     private boolean heuristicScanEnabled;   // deterministic ActiveScanEngine module scan; default OFF (AI-only)
     private boolean contentDiscoveryEnabled; // forced-browsing / endpoint dir-scan (/logs,/api…); default OFF — AI mode focuses on IDOR/BOLA/BAC
+    private boolean scanMarkerEnabled;      // tag every target request with an identifying header so the blue team can tell authorized scan traffic from real attacks; default ON
+    private String scanMarkerHeader;        // header name used for the scan marker
     private int agentTurnTimeoutSec;        // hard per-LLM-turn timeout
     private int agentSiteTimeBudgetMin;     // wall-clock ceiling per site scan (minutes); 0 = unlimited
 
@@ -199,6 +201,8 @@ public class Settings {
         settings.agentRouterMode = "ai";        // LLM triages 1-3 relevant playbooks (was "all")
         settings.heuristicScanEnabled = false;  // default: AI-only scanning, no deterministic module barrage
         settings.contentDiscoveryEnabled = false; // default: no /logs,/api dir-scan — focus on IDOR/BOLA/BAC
+        settings.scanMarkerEnabled = true;       // default ON — responsible-testing hygiene
+        settings.scanMarkerHeader = "X-AppSecHunter-Scan";
         settings.agentTurnTimeoutSec = 120;
         settings.agentSiteTimeBudgetMin = 0;
         settings.ambientEnabled = true;       // default-on (settings checkbox removed)
@@ -301,6 +305,8 @@ public class Settings {
         json.put("agentRouterMode", agentRouterMode);
         json.put("heuristicScanEnabled", heuristicScanEnabled);
         json.put("contentDiscoveryEnabled", contentDiscoveryEnabled);
+        json.put("scanMarkerEnabled", scanMarkerEnabled);
+        json.put("scanMarkerHeader", scanMarkerHeader);
         json.put("agentTurnTimeoutSec", agentTurnTimeoutSec);
         json.put("agentSiteTimeBudgetMin", agentSiteTimeBudgetMin);
         json.put("ambientEnabled", ambientEnabled);
@@ -425,6 +431,8 @@ public class Settings {
         settings.agentRouterMode = json.optString("agentRouterMode", "ai");
         settings.heuristicScanEnabled = json.optBoolean("heuristicScanEnabled", false);
         settings.contentDiscoveryEnabled = json.optBoolean("contentDiscoveryEnabled", false);
+        settings.scanMarkerEnabled = json.optBoolean("scanMarkerEnabled", true);
+        settings.scanMarkerHeader = json.optString("scanMarkerHeader", "X-AppSecHunter-Scan");
         settings.agentTurnTimeoutSec = json.optInt("agentTurnTimeoutSec", 120);
         settings.agentSiteTimeBudgetMin = json.optInt("agentSiteTimeBudgetMin", 0);
         settings.ambientEnabled = json.optBoolean("ambientEnabled", true); // default-on (checkbox removed)
@@ -619,6 +627,10 @@ public class Settings {
     public void setHeuristicScanEnabled(boolean v) { this.heuristicScanEnabled = v; }
     public boolean isContentDiscoveryEnabled() { return contentDiscoveryEnabled; }
     public void setContentDiscoveryEnabled(boolean v) { this.contentDiscoveryEnabled = v; }
+    public boolean isScanMarkerEnabled() { return scanMarkerEnabled; }
+    public void setScanMarkerEnabled(boolean v) { this.scanMarkerEnabled = v; }
+    public String getScanMarkerHeader() { return (scanMarkerHeader == null || scanMarkerHeader.trim().isEmpty()) ? "X-AppSecHunter-Scan" : scanMarkerHeader.trim(); }
+    public void setScanMarkerHeader(String v) { this.scanMarkerHeader = v; }
     public int getAgentTurnTimeoutSec() { return agentTurnTimeoutSec > 0 ? agentTurnTimeoutSec : 120; }
     public void setAgentTurnTimeoutSec(int v) { this.agentTurnTimeoutSec = v; }
     public int getAgentSiteTimeBudgetMin() { return agentSiteTimeBudgetMin; }

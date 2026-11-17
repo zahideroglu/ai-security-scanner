@@ -234,6 +234,8 @@ public final class I18n {
         put("settings.scan.title", "🔍 Tarama Yapılandırması", "🔍 Scan Configuration");
         put("settings.scan.autoscan", "Yakalanan istekleri otomatik tara", "Auto-scan intercepted requests");
         put("settings.scan.usescope", "Yalnızca Burp kapsamındaki URL'leri tara", "Only scan URLs in Burp scope");
+        put("settings.scan.marker", "Tarama trafiğini tanımlama başlığıyla imzala (sorumlu test)", "Tag scan traffic with an identifying header (responsible testing)");
+        put("settings.scan.marker.tip", "AppSecHunter'ın hedefe gönderdiği her isteğe bir tanımlama başlığı ekler; böylece mavi takım yetkili tarama trafiğini gerçek saldırıdan ayırabilir.", "Adds an identifying header to every request AppSecHunter sends to the target, so the blue team can tell authorized scan traffic from a real attack.");
         put("settings.scan.confidence", "Minimum Güven Eşiği:", "Minimum Confidence Threshold:");
         put("settings.filters.title", "🔧 İstek Filtreleri", "🔧 Request Filters");
         put("settings.filters.static", "Statik dosyaları filtrele (.js, .css, .jpg, .png, vb.)", "Filter static files (.js, .css, .jpg, .png, etc.)");

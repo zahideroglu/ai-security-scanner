@@ -55,6 +55,7 @@ public class SettingsPanel extends JPanel {
     // Scan Configuration
     private JCheckBox autoScanCheckBox;
     private JCheckBox useScopeCheckBox;
+    private JCheckBox scanMarkerCheckBox;
     private JSlider confidenceSlider;
     private JLabel confidenceValueLabel;
     
@@ -604,7 +605,13 @@ public class SettingsPanel extends JPanel {
         useScopeCheckBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         useScopeCheckBox.setBackground(ColorScheme.BG_CARD);
         useScopeCheckBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
+
+        scanMarkerCheckBox = I18nUI.text(new JCheckBox(), "settings.scan.marker");
+        scanMarkerCheckBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        scanMarkerCheckBox.setBackground(ColorScheme.BG_CARD);
+        scanMarkerCheckBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        I18nUI.tip(scanMarkerCheckBox, "settings.scan.marker.tip");
+
         // Confidence threshold slider
         JPanel confidencePanel = new JPanel(new BorderLayout(10, 5));
         confidencePanel.setBackground(ColorScheme.BG_CARD);
@@ -643,6 +650,7 @@ public class SettingsPanel extends JPanel {
         panel.add(autoScanCheckBox);
         panel.add(Box.createVerticalStrut(5));
         panel.add(useScopeCheckBox);
+        panel.add(scanMarkerCheckBox);
         panel.add(Box.createVerticalStrut(10));
         panel.add(confidencePanel);
         
@@ -1214,6 +1222,7 @@ public class SettingsPanel extends JPanel {
             // Scan Configuration
             autoScanCheckBox.setSelected(currentSettings.isAutoScan());
             useScopeCheckBox.setSelected(currentSettings.isUseScope());
+            scanMarkerCheckBox.setSelected(currentSettings.isScanMarkerEnabled());
             if (heuristicScanCheckBox != null) heuristicScanCheckBox.setSelected(currentSettings.isHeuristicScanEnabled());
             confidenceSlider.setValue((int) (currentSettings.getMinConfidence() * 100));
 
@@ -1277,6 +1286,7 @@ public class SettingsPanel extends JPanel {
 
             currentSettings.setAutoScan(autoScanCheckBox.isSelected());
             currentSettings.setUseScope(useScopeCheckBox.isSelected());
+            currentSettings.setScanMarkerEnabled(scanMarkerCheckBox.isSelected());
             if (heuristicScanCheckBox != null) currentSettings.setHeuristicScanEnabled(heuristicScanCheckBox.isSelected());
             currentSettings.setMinConfidence(confidenceSlider.getValue() / 100.0);
 
